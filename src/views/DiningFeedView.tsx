@@ -302,13 +302,21 @@ export const DiningFeedView: React.FC<DiningFeedViewProps> = ({
 
                       {/* Status Badge */}
                       <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs shadow-sm ${
-                        isLocked
+                        session.status === 'COMPLETED'
+                          ? 'bg-teal-600 text-white'
+                          : isLocked
                           ? 'bg-emerald-600 text-white'
                           : isFull
                           ? 'bg-amber-500 text-white'
                           : 'bg-brand-500 text-white'
                       }`}>
-                        {isLocked ? 'Đã Chốt' : isFull ? 'Đủ Người • Đang Thảo Luận' : 'Đang Tuyển Bạn'}
+                        {session.status === 'COMPLETED'
+                          ? '✓ Đã Thanh Toán'
+                          : isLocked
+                          ? 'Đã Chốt Bàn'
+                          : isFull
+                          ? 'Đủ Người • Thảo Luận'
+                          : 'Đang Tuyển Bạn'}
                       </span>
                     </div>
 

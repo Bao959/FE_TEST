@@ -85,6 +85,35 @@ export interface InvitedFriend {
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
 }
 
+export interface OrderItem {
+  id: string;
+  menuItemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  addedByUserId: string;
+  addedByUserName: string;
+}
+
+export interface PaymentInfo {
+  orderType: 'PRE_ORDER' | 'DINE_IN_ORDER'; // Chọn đặt món trước hoặc tới quán gọi món
+  paymentMode: 'PRE_PAY' | 'POST_PAY'; // Thanh toán trước hoặc sau khi ăn xong
+  orderItems: OrderItem[];
+  customBillAmount?: number;
+  subtotal: number;
+  discountAmount: number;
+  totalAmount: number;
+  amountPerPerson: number;
+  paymentStatus: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID';
+  paidMembers: {
+    [userId: string]: {
+      paid: boolean;
+      paidAt?: string;
+      transactionId?: string;
+    };
+  };
+}
+
 export interface DiningSession {
   id: string;
   title: string;
@@ -102,11 +131,12 @@ export interface DiningSession {
   eatingTime: string;
   note: string;
   voucherApplied?: GroupVoucher;
-  status: 'RECRUITING' | 'FULL_DISCUSSING' | 'LOCKED' | 'CANCELLED';
+  status: 'RECRUITING' | 'FULL_DISCUSSING' | 'LOCKED' | 'COMPLETED' | 'CANCELLED';
   discussionMessages: ChatMessage[];
   appointedBookerId?: string;
   appointedBookerName?: string;
   reservationStatus: 'NONE' | 'SENT_TO_RESTAURANT' | 'CONFIRMED_BY_RESTAURANT' | 'MANUAL_BOOKED';
+  paymentInfo?: PaymentInfo;
   createdAt: string;
 }
 

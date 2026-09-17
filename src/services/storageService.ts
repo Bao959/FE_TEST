@@ -183,7 +183,18 @@ class StorageService {
   // Dining Sessions
   public getSessions(): DiningSession[] {
     const raw = localStorage.getItem(STORAGE_KEYS.SESSIONS);
-    return raw ? JSON.parse(raw) : INITIAL_DINING_SESSIONS;
+    const sessions: DiningSession[] = raw ? JSON.parse(raw) : INITIAL_DINING_SESSIONS;
+    let modified = false;
+    sessions.forEach((s) => {
+      if (!s.paymentInfo) {
+        this.recalculatePaymentInfo(s);
+        modified = true;
+      }
+    });
+    if (modified) {
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    }
+    return sessions;
   }
 
   public getSession(id: string): DiningSession | undefined {
@@ -548,6 +559,248 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
   }
 
+  // Payment & Order Management
+  public recalculatePaymentInfo(session: DiningSession): void {
+    if (!session.paymentInfo) {
+      session.paymentInfo = {
+        orderType: 'PRE_ORDER',
+        paymentMode: 'PRE_PAY',
+        orderItems: [],
+        subtotal: 0,
+        discountAmount: 0,
+        totalAmount: 0,
+        amountPerPerson: 0,
+        paymentStatus: 'UNPAID',
+        paidMembers: {}
+      };
+    }
+
+    const pi = session.paymentInfo;
+    let subtotal = 0;
+    if (pi.orderType === 'PRE_ORDER') {
+      subtotal = pi.orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    } else {
+      subtotal = pi.customBillAmount || 0;
+    }
+
+    let discount = 0;
+    if (session.voucherApplied) {
+      const vText = session.voucherApplied.discountValue;
+      if (vText.includes('%')) {
+        const match = vText.match(/(\d+)%/);
+        if (match) {
+          const percent = parseInt(match[1], 10);
+          discount = Math.round((subtotal * percent) / 100);
+        }
+      } else if (vText.includes('Đi 4') || vText.includes('Tính 3')) {
+        discount = Math.round(subtotal * 0.25);
+      } else {
+        discount = 60000;
+      }
+    }
+
+    pi.subtotal = subtotal;
+    pi.discountAmount = Math.min(discount, subtotal);
+    pi.totalAmount = Math.max(0, subtotal - pi.discountAmount);
+    
+    const memberCount = Math.max(1, session.joinedMembers.length);
+    pi.amountPerPerson = Math.round(pi.totalAmount / memberCount);
+
+    const allMembersPaid =
+      session.joinedMembers.length > 0 &&
+      session.joinedMembers.every((m) => pi.paidMembers[m.userId]?.paid);
+
+    if (allMembersPaid && pi.totalAmount > 0) {
+      pi.paymentStatus = 'PAID';
+      session.status = 'COMPLETED';
+    } else if (Object.values(pi.paidMembers).some((p) => p.paid)) {
+      pi.paymentStatus = 'PARTIALLY_PAID';
+    }
+  }
+
+  public addOrderItem(sessionId: string, menuItem: MenuItem, user: User, quantity: number = 1): DiningSession | null {
+    const sessions = this.getSessions();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+
+    if (!session.paymentInfo) {
+      this.recalculatePaymentInfo(session);
+    }
+
+    const existing = session.paymentInfo!.orderItems.find((i) => i.menuItemId === menuItem.id);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      session.paymentInfo!.orderItems.push({
+        id: `order_item_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        menuItemId: menuItem.id,
+        name: menuItem.name,
+        price: menuItem.price,
+        quantity,
+        addedByUserId: user.id,
+        addedByUserName: user.name
+      });
+    }
+
+    session.discussionMessages.push({
+      id: `msg_order_${Date.now()}`,
+      userId: user.id,
+      userName: user.name,
+      userAvatar: user.avatar,
+      message: `🍲 Đã thêm món: ${menuItem.name} (${quantity} suất) vào thực đơn bàn!`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSystem: true
+    });
+
+    this.recalculatePaymentInfo(session);
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    return session;
+  }
+
+  public updateOrderItemQuantity(sessionId: string, orderItemId: string, delta: number): DiningSession | null {
+    const sessions = this.getSessions();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session || !session.paymentInfo) return null;
+
+    const itemIndex = session.paymentInfo.orderItems.findIndex((i) => i.id === orderItemId);
+    if (itemIndex > -1) {
+      session.paymentInfo.orderItems[itemIndex].quantity += delta;
+      if (session.paymentInfo.orderItems[itemIndex].quantity <= 0) {
+        session.paymentInfo.orderItems.splice(itemIndex, 1);
+      }
+    }
+
+    this.recalculatePaymentInfo(session);
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    return session;
+  }
+
+  public updatePaymentConfig(sessionId: string, orderType: 'PRE_ORDER' | 'DINE_IN_ORDER', paymentMode: 'PRE_PAY' | 'POST_PAY'): DiningSession | null {
+    const sessions = this.getSessions();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+
+    if (!session.paymentInfo) {
+      this.recalculatePaymentInfo(session);
+    }
+
+    session.paymentInfo!.orderType = orderType;
+    session.paymentInfo!.paymentMode = paymentMode;
+
+    const orderText = orderType === 'PRE_ORDER' ? 'Đặt trước món trên App' : 'Đến quán gọi món trực tiếp';
+    const payText = paymentMode === 'PRE_PAY' ? 'Thanh toán trước' : 'Ăn xong mới thanh toán';
+
+    session.discussionMessages.push({
+      id: `msg_paycfg_${Date.now()}`,
+      userId: 'system',
+      userName: 'Hệ thống',
+      userAvatar: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&auto=format&fit=crop&q=80',
+      message: `💳 Cập nhật thanh toán: ${orderText} • ${payText}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSystem: true
+    });
+
+    this.recalculatePaymentInfo(session);
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    return session;
+  }
+
+  public updateCustomBillAmount(sessionId: string, amount: number): DiningSession | null {
+    const sessions = this.getSessions();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+
+    if (!session.paymentInfo) {
+      this.recalculatePaymentInfo(session);
+    }
+
+    session.paymentInfo!.customBillAmount = amount;
+    this.recalculatePaymentInfo(session);
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    return session;
+  }
+
+  public payMemberShare(sessionId: string, userId: string, userName: string): DiningSession | null {
+    const sessions = this.getSessions();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+
+    if (!session.paymentInfo) {
+      this.recalculatePaymentInfo(session);
+    }
+
+    const pi = session.paymentInfo!;
+    pi.paidMembers[userId] = {
+      paid: true,
+      paidAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      transactionId: `TX_${Date.now().toString().slice(-6)}`
+    };
+
+    session.discussionMessages.push({
+      id: `msg_paid_share_${Date.now()}`,
+      userId: userId,
+      userName: userName,
+      userAvatar: session.joinedMembers.find((m) => m.userId === userId)?.avatar || '',
+      message: `💰 ${userName} đã thanh toán thành công phần tiền chia (${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pi.amountPerPerson)})!`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSystem: true
+    });
+
+    this.recalculatePaymentInfo(session);
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    return session;
+  }
+
+  public payFullBill(sessionId: string, paidByUserId?: string, paidByName?: string): DiningSession | null {
+    const sessions = this.getSessions();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+
+    if (!session.paymentInfo) {
+      this.recalculatePaymentInfo(session);
+    }
+
+    const pi = session.paymentInfo!;
+    session.joinedMembers.forEach((m) => {
+      pi.paidMembers[m.userId] = {
+        paid: true,
+        paidAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        transactionId: `TX_${Date.now().toString().slice(-6)}`
+      };
+    });
+
+    pi.paymentStatus = 'PAID';
+    session.status = 'COMPLETED';
+
+    session.discussionMessages.push({
+      id: `msg_paid_full_${Date.now()}`,
+      userId: 'system',
+      userName: 'Hệ thống',
+      userAvatar: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&auto=format&fit=crop&q=80',
+      message: `🎉 TOÀN BỘ BÀN ĂN ĐÃ THANH TOÁN THÀNH CÔNG! ${paidByName ? `${paidByName} đã đại diện thanh toán.` : 'Hóa đơn đã được quyết toán.'} Chúc mọi người có bữa ăn ngon miệng và nhiều niềm vui!`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSystem: true
+    });
+
+    // Notify restaurant
+    if (session.isRestaurantRegistered) {
+      const restUsers = this.getUsers().filter((u) => u.role === 'restaurant' && u.restaurantId === session.restaurantId);
+      restUsers.forEach((ru) => {
+        this.addNotification({
+          userId: ru.id,
+          title: '💵 Đơn đặt bàn đã thanh toán thành công!',
+          content: `Bàn ${session.title} (${session.joinedMembers.length} khách) đã thanh toán tổng cộng ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pi.totalAmount)}.`,
+          type: 'RESERVATION_CONFIRMED',
+          sessionId: session.id,
+          isRead: false
+        });
+      });
+    }
+
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    return session;
+  }
+
   public markNotificationAsRead(id: string): void {
     const raw = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
     const list: AppNotification[] = raw ? JSON.parse(raw) : INITIAL_NOTIFICATIONS;
@@ -560,3 +813,4 @@ class StorageService {
 }
 
 export const storageService = new StorageService();
+

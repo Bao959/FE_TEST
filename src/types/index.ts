@@ -162,3 +162,27 @@ export interface AppNotification {
   isRead: boolean;
   createdAt: string;
 }
+
+export interface FutureDiningPost {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  cravingDish: string;
+  preferredArea: string;
+  targetDate: string;
+  lat: number;
+  lng: number;
+  restaurantSuggestion?: string;
+  targetSlots: number;
+  joinedUsers: Array<{
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    note?: string;
+  }>;
+  budgetPerPerson: string;
+  description: string;
+  createdAt: string;
+}
+

@@ -1,4 +1,4 @@
-import { User, Restaurant, MenuItem, GroupVoucher, DiningSession, UserPost, AppNotification } from '../types';
+import { User, Restaurant, MenuItem, GroupVoucher, DiningSession, UserPost, AppNotification, FutureDiningPost } from '../types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -546,3 +546,91 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
     createdAt: '30 phút trước'
   }
 ];
+
+export const INITIAL_FUTURE_POSTS: FutureDiningPost[] = [
+  {
+    id: 'fpost_1',
+    userId: 'user_2',
+    userName: 'Trần Thảo Mai',
+    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    cravingDish: 'Buffet Nướng Hàn Quốc Than Hoa',
+    preferredArea: 'Quận 1, TP. Hồ Chí Minh',
+    targetDate: 'Tối Thứ Bảy tuần này (19:30)',
+    lat: 10.7745,
+    lng: 106.7032,
+    restaurantSuggestion: 'Chưa chốt quán, dự kiến Gogi House hoặc Meat & Meet',
+    targetSlots: 4,
+    joinedUsers: [
+      {
+        userId: 'user_2',
+        userName: 'Trần Thảo Mai',
+        userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+        note: 'Chủ post - thích ăn ba chỉ nướng giòn'
+      },
+      {
+        userId: 'user_3',
+        userName: 'Lê Quốc Bảo',
+        userAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
+        note: 'Đã join, mong gặp mọi người!'
+      }
+    ],
+    budgetPerPerson: '250.000đ - 350.000đ',
+    description: 'Cuối tuần muốn xả stress bằng tiệc thịt nướng! Quán cụ thể chúng mình sẽ cùng vote trong nhóm, tiêu chí là thịt ngon và panchan refill thoải mái.',
+    createdAt: '30 phút trước'
+  },
+  {
+    id: 'fpost_2',
+    userId: 'user_3',
+    userName: 'Lê Quốc Bảo',
+    userAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
+    cravingDish: 'Lẩu Bò Thập Cẩm & Bia Craft',
+    preferredArea: 'Quận 3, TP. Hồ Chí Minh',
+    targetDate: 'Tối Chủ Nhật tuần này (18:30)',
+    lat: 10.7876,
+    lng: 106.6854,
+    restaurantSuggestion: 'Lẩu Bò Nhà Gỗ hoặc Ba Toa Sài Gòn',
+    targetSlots: 5,
+    joinedUsers: [
+      {
+        userId: 'user_3',
+        userName: 'Lê Quốc Bảo',
+        userAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
+        note: 'Chủ post'
+      }
+    ],
+    budgetPerPerson: '150.000đ - 200.000đ',
+    description: 'Chủ nhật lành lạnh ngồi ăn lẩu bò hầm thảo mộc Đà Lạt, lai rai vài ly bia thủ công. Tìm thêm 4 bạn hợp gu nói chuyện vui vẻ!',
+    createdAt: '2 giờ trước'
+  },
+  {
+    id: 'fpost_3',
+    userId: 'user_4',
+    userName: 'Đặng Minh Anh',
+    userAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+    cravingDish: 'Càn Quét Món Ăn Vặt & Trà Sữa Chợ Lớn',
+    preferredArea: 'Quận 5, TP. Hồ Chí Minh',
+    targetDate: 'Chiều Thứ Sáu tuần sau (17:00)',
+    lat: 10.7565,
+    lng: 106.6621,
+    restaurantSuggestion: 'Chưa chọn quán (Đi food tour đường phố)',
+    targetSlots: 4,
+    joinedUsers: [
+      {
+        userId: 'user_4',
+        userName: 'Đặng Minh Anh',
+        userAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+        note: 'Chủ post'
+      },
+      {
+        userId: 'user_1',
+        userName: 'Nguyễn Hoàng Tuấn',
+        userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        note: 'Mê món Hoa khu Chợ Lớn'
+      }
+    ],
+    budgetPerPerson: 'Dưới 100.000đ',
+    description: 'Lên kèo đi ăn sủi cảo Hà Tôn Quyền, phá lấu, chè mè đen khu người Hoa. Đi đông thử được nhiều món lặt vặt hơn nha!',
+    createdAt: 'Hôm nay'
+  }
+];
+

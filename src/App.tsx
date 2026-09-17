@@ -7,11 +7,13 @@ import { DiningFeedView } from './views/DiningFeedView';
 import { NearbyDealsView } from './views/NearbyDealsView';
 import { UserProfileView } from './views/UserProfileView';
 import { RestaurantDashboardView } from './views/RestaurantDashboardView';
+import { NearbyFuturePostsView } from './views/NearbyFuturePostsView';
+import { FullMapView } from './views/FullMapView';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<User>(() => storageService.getCurrentUser());
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState<'feed' | 'deals' | 'profile' | 'restaurant_portal'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'future_posts' | 'map_view' | 'deals' | 'profile' | 'restaurant_portal'>('feed');
   const [notifications, setNotifications] = useState<AppNotification[]>(() =>
     storageService.getNotifications(currentUser.id)
   );
@@ -78,6 +80,21 @@ export function App() {
             onOpenDeals={() => setActiveTab('deals')}
             targetSessionId={targetSessionId}
             clearTargetSessionId={() => setTargetSessionId(null)}
+          />
+        )}
+
+        {activeTab === 'future_posts' && (
+          <NearbyFuturePostsView
+            currentUser={currentUser}
+            onOpenFeedWithSession={handleOpenFeedWithSession}
+          />
+        )}
+
+        {activeTab === 'map_view' && (
+          <FullMapView
+            currentUser={currentUser}
+            onOpenSession={handleOpenSessionFromNotif}
+            onOpenDeals={() => setActiveTab('deals')}
           />
         )}
 

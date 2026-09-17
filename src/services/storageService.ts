@@ -15,8 +15,10 @@ import {
   INITIAL_VOUCHERS,
   INITIAL_DINING_SESSIONS,
   INITIAL_POSTS,
-  INITIAL_NOTIFICATIONS
+  INITIAL_NOTIFICATIONS,
+  INITIAL_FUTURE_POSTS
 } from '../mock/seedData';
+import { FutureDiningPost } from '../types';
 
 const STORAGE_KEYS = {
   USERS: 'dinetogether_users_v1',
@@ -26,7 +28,8 @@ const STORAGE_KEYS = {
   SESSIONS: 'dinetogether_sessions_v1',
   POSTS: 'dinetogether_posts_v1',
   NOTIFICATIONS: 'dinetogether_notifications_v1',
-  CURRENT_USER_ID: 'dinetogether_current_user_id_v1'
+  CURRENT_USER_ID: 'dinetogether_current_user_id_v1',
+  FUTURE_POSTS: 'dinetogether_future_posts_v1'
 };
 
 class StorageService {
@@ -43,6 +46,7 @@ class StorageService {
       localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(INITIAL_DINING_SESSIONS));
       localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(INITIAL_POSTS));
       localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
+      localStorage.setItem(STORAGE_KEYS.FUTURE_POSTS, JSON.stringify(INITIAL_FUTURE_POSTS));
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, 'user_1'); // Default user: Nguyễn Hoàng Tuấn
     }
   }
@@ -809,6 +813,58 @@ class StorageService {
       item.isRead = true;
       localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
     }
+  }
+
+  // Future Dining Posts (Bài đăng hẹn lịch xa & gợi ý món ăn)
+  public getFuturePosts(): FutureDiningPost[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.FUTURE_POSTS);
+    return raw ? JSON.parse(raw) : INITIAL_FUTURE_POSTS;
+  }
+
+  public createFuturePost(postData: Omit<FutureDiningPost, 'id' | 'createdAt' | 'joinedUsers'>, creator: User): FutureDiningPost {
+    const posts = this.getFuturePosts();
+    const newPost: FutureDiningPost = {
+      ...postData,
+      id: `fpost_${Date.now()}`,
+      joinedUsers: [
+        {
+          userId: creator.id,
+          userName: creator.name,
+          userAvatar: creator.avatar,
+          note: 'Chủ bài đăng'
+        }
+      ],
+      createdAt: 'Vừa xong'
+    };
+    posts.unshift(newPost);
+    localStorage.setItem(STORAGE_KEYS.FUTURE_POSTS, JSON.stringify(posts));
+    return newPost;
+  }
+
+  public joinFuturePost(postId: string, user: User, note?: string): FutureDiningPost | null {
+    const posts = this.getFuturePosts();
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return null;
+
+    if (!target.joinedUsers.some((u) => u.userId === user.id)) {
+      target.joinedUsers.push({
+        userId: user.id,
+        userName: user.name,
+        userAvatar: user.avatar,
+        note: note || 'Tham gia kèo ăn'
+      });
+      localStorage.setItem(STORAGE_KEYS.FUTURE_POSTS, JSON.stringify(posts));
+    }
+    return target;
+  }
+
+  public leaveFuturePost(postId: string, userId: string): void {
+    const posts = this.getFuturePosts();
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return;
+
+    target.joinedUsers = target.joinedUsers.filter((u) => u.userId !== userId);
+    localStorage.setItem(STORAGE_KEYS.FUTURE_POSTS, JSON.stringify(posts));
   }
 }
 

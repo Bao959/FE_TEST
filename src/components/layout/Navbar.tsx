@@ -8,15 +8,17 @@ import {
   LogOut,
   RefreshCw,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Calendar,
+  Map
 } from 'lucide-react';
 import { User, AppNotification } from '../../types';
 import { storageService } from '../../services/storageService';
 
 interface NavbarProps {
   currentUser: User;
-  activeTab: 'feed' | 'deals' | 'profile' | 'restaurant_portal';
-  setActiveTab: (tab: 'feed' | 'deals' | 'profile' | 'restaurant_portal') => void;
+  activeTab: 'feed' | 'future_posts' | 'map_view' | 'deals' | 'profile' | 'restaurant_portal';
+  setActiveTab: (tab: 'feed' | 'future_posts' | 'map_view' | 'deals' | 'profile' | 'restaurant_portal') => void;
   notifications: AppNotification[];
   onOpenSession: (sessionId: string) => void;
   onLogout: () => void;
@@ -77,53 +79,78 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1">
             <button
               onClick={() => setActiveTab('feed')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
                 activeTab === 'feed'
                   ? 'bg-brand-50 text-brand-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <Utensils className="w-4 h-4" />
+              <Utensils className="w-3.5 h-3.5" />
               <span>Tìm Bạn Ăn Chung</span>
             </button>
 
             <button
+              onClick={() => setActiveTab('future_posts')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
+                activeTab === 'future_posts'
+                  ? 'bg-amber-50 text-amber-700 font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5 text-amber-600" />
+              <span>Bài Đăng Gần Bạn</span>
+              <span className="px-1 py-0.2 text-[9px] bg-amber-500 text-white rounded font-bold">MỚI</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('map_view')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
+                activeTab === 'map_view'
+                  ? 'bg-brand-50 text-brand-600 font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Map className="w-3.5 h-3.5" />
+              <span>Bản Đồ Quán Ăn</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('deals')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
                 activeTab === 'deals'
                   ? 'bg-brand-50 text-brand-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <MapPin className="w-4 h-4" />
+              <MapPin className="w-3.5 h-3.5" />
               <span>Ưu Đãi Gần Bạn</span>
-              <span className="px-1.5 py-0.5 text-[10px] bg-red-500 text-white rounded-full font-bold">HOT</span>
+              <span className="px-1.5 py-0.2 text-[9px] bg-red-500 text-white rounded-full font-bold">HOT</span>
             </button>
 
             <button
               onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
                 activeTab === 'profile'
                   ? 'bg-brand-50 text-brand-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <UserIcon className="w-4 h-4" />
+              <UserIcon className="w-3.5 h-3.5" />
               <span>Trang Cá Nhân</span>
             </button>
 
             <button
               onClick={() => setActiveTab('restaurant_portal')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
                 activeTab === 'restaurant_portal'
                   ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 shadow-xs'
                   : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/50'
               }`}
             >
-              <Store className="w-4 h-4 text-emerald-600" />
+              <Store className="w-3.5 h-3.5 text-emerald-600" />
               <span>Kênh Nhà Hàng</span>
             </button>
           </nav>
@@ -271,31 +298,45 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Mobile Tab Bar */}
-      <div className="md:hidden flex items-center justify-around border-t border-slate-100 bg-white py-2 px-1 text-[11px] font-semibold text-slate-600">
+      <div className="lg:hidden flex items-center justify-around border-t border-slate-100 bg-white py-2 px-1 text-[10px] font-semibold text-slate-600 overflow-x-auto">
         <button
           onClick={() => setActiveTab('feed')}
-          className={`flex flex-col items-center gap-1 p-1 ${activeTab === 'feed' ? 'text-brand-600 font-bold' : ''}`}
+          className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'feed' ? 'text-brand-600 font-bold' : ''}`}
         >
           <Utensils className="w-4 h-4" />
-          <span>Tìm Bạn</span>
+          <span>Tìm Bàn</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('future_posts')}
+          className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'future_posts' ? 'text-amber-600 font-bold' : ''}`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>Bài Đăng</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('map_view')}
+          className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'map_view' ? 'text-brand-600 font-bold' : ''}`}
+        >
+          <Map className="w-4 h-4" />
+          <span>Bản Đồ</span>
         </button>
         <button
           onClick={() => setActiveTab('deals')}
-          className={`flex flex-col items-center gap-1 p-1 ${activeTab === 'deals' ? 'text-brand-600 font-bold' : ''}`}
+          className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'deals' ? 'text-brand-600 font-bold' : ''}`}
         >
           <MapPin className="w-4 h-4" />
           <span>Ưu Đãi</span>
         </button>
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center gap-1 p-1 ${activeTab === 'profile' ? 'text-brand-600 font-bold' : ''}`}
+          className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'profile' ? 'text-brand-600 font-bold' : ''}`}
         >
           <UserIcon className="w-4 h-4" />
           <span>Cá Nhân</span>
         </button>
         <button
           onClick={() => setActiveTab('restaurant_portal')}
-          className={`flex flex-col items-center gap-1 p-1 ${activeTab === 'restaurant_portal' ? 'text-emerald-700 font-bold' : ''}`}
+          className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'restaurant_portal' ? 'text-emerald-700 font-bold' : ''}`}
         >
           <Store className="w-4 h-4" />
           <span>Kênh Quán</span>

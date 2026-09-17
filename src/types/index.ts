@@ -1,0 +1,134 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  role: 'user' | 'restaurant';
+  restaurantId?: string;
+  bio: string;
+  foodPreferences: string[];
+  friends: string[]; // List of User IDs
+  trustScore: number;
+  totalMealsJoined: number;
+  location: {
+    lat: number;
+    lng: number;
+    address: string;
+  };
+}
+
+export interface MenuItem {
+  id: string;
+  restaurantId: string;
+  name: string;
+  price: number;
+  category: string;
+  image: string;
+  description: string;
+  isAvailable: boolean;
+}
+
+export interface GroupVoucher {
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  code: string;
+  title: string;
+  description: string;
+  discountValue: string;
+  minGroupSize: number;
+  expiryDate: string;
+  bannerImage: string;
+}
+
+export interface Restaurant {
+  id: string;
+  name: string;
+  category: string;
+  address: string;
+  lat: number;
+  lng: number;
+  rating: number;
+  reviewCount: number;
+  priceRange: string;
+  coverImage: string;
+  isRegisteredOnSystem: boolean;
+  phone: string;
+  openHours: string;
+  activeDealsCount: number;
+  description: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  message: string;
+  timestamp: string;
+  isSystem?: boolean;
+}
+
+export interface JoinedMember {
+  userId: string;
+  name: string;
+  avatar: string;
+  isHost: boolean;
+  readyToLock: boolean;
+  introduction?: string;
+}
+
+export interface InvitedFriend {
+  userId: string;
+  name: string;
+  avatar: string;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+}
+
+export interface DiningSession {
+  id: string;
+  title: string;
+  restaurantId: string;
+  restaurantName: string;
+  restaurantAddress: string;
+  restaurantImage: string;
+  isRestaurantRegistered: boolean;
+  hostId: string;
+  hostName: string;
+  hostAvatar: string;
+  targetSlots: number;
+  joinedMembers: JoinedMember[];
+  invitedFriends: InvitedFriend[];
+  eatingTime: string;
+  note: string;
+  voucherApplied?: GroupVoucher;
+  status: 'RECRUITING' | 'FULL_DISCUSSING' | 'LOCKED' | 'CANCELLED';
+  discussionMessages: ChatMessage[];
+  appointedBookerId?: string;
+  appointedBookerName?: string;
+  reservationStatus: 'NONE' | 'SENT_TO_RESTAURANT' | 'CONFIRMED_BY_RESTAURANT' | 'MANUAL_BOOKED';
+  createdAt: string;
+}
+
+export interface UserPost {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  restaurantName?: string;
+  image?: string;
+  likes: number;
+  createdAt: string;
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string; // target user
+  title: string;
+  content: string;
+  type: 'INVITE' | 'SESSION_FULL' | 'RESERVATION_CONFIRMED' | 'NEW_MESSAGE' | 'GENERAL';
+  sessionId?: string;
+  isRead: boolean;
+  createdAt: string;
+}

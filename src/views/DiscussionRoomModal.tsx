@@ -1001,7 +1001,7 @@ export const DiscussionRoomModal: React.FC<DiscussionRoomModalProps> = ({
                   {formatCurrency(qrPaymentType === 'SHARE' ? paymentInfo.amountPerPerson : paymentInfo.totalAmount)}
                 </span>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Nội dung: <strong>DINETOGETHER {session.id.slice(-5).toUpperCase()}</strong>
+                  Nội dung: <strong>CHAMDUA {session.id.slice(-5).toUpperCase()}</strong>
                 </p>
               </div>
             </div>

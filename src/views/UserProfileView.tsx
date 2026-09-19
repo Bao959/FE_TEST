@@ -386,7 +386,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                     <Heart className="w-4 h-4 text-red-500 fill-red-500/20" />
                     <span>{post.likes} Yêu thích</span>
                   </button>
-                  <span className="text-[11px] text-slate-400">DineTogether Community</span>
+                  <span className="text-[11px] text-slate-400">Cộng đồng Chạm Đũa</span>
                 </div>
               </div>
             ))}

@@ -140,7 +140,7 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
       restaurantName: currentRestaurant.name,
       code: vCode.trim().toUpperCase(),
       title: vTitle.trim(),
-      description: vDesc.trim() || `Ưu đãi dành cho nhóm từ ${vMinSize} người trở lên khi ghép bàn trên DineTogether.`,
+      description: vDesc.trim() || `Ưu đãi dành cho nhóm từ ${vMinSize} người trở lên khi ghép bàn trên Chạm Đũa.`,
       discountValue: vDiscount.trim(),
       minGroupSize: Number(vMinSize),
       expiryDate: vExpiry.trim(),

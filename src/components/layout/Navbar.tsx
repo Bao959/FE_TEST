@@ -65,15 +65,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-3 cursor-pointer group select-none"
             onClick={() => setActiveTab('feed')}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
-              <Utensils className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform text-xl">
+              🥢
             </div>
             <div>
               <span className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-1">
-                Dine<span className="text-brand-600">Together</span>
+                Chạm<span className="text-brand-600">Đũa</span>
               </span>
               <p className="text-[10px] text-slate-500 font-medium -mt-1 flex items-center gap-1">
-                <Sparkles className="w-2.5 h-2.5 text-amber-500" /> Kết nối ăn chung & Săn deal
+                <Sparkles className="w-2.5 h-2.5 text-amber-500" /> Chạm đũa kết thân • Ăn ngon chia sẻ
               </p>
             </div>
           </div>

@@ -2,14 +2,18 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   avatar: string;
   role: 'user' | 'restaurant';
   restaurantId?: string;
   bio: string;
   foodPreferences: string[];
+  favoriteBudget?: string;
   friends: string[]; // List of User IDs
   trustScore: number;
   totalMealsJoined: number;
+  profileCompletionPercent?: number;
+  isProfileCompleted?: boolean;
   location: {
     lat: number;
     lng: number;

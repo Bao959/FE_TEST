@@ -9,6 +9,8 @@ import { UserProfileView } from './views/UserProfileView';
 import { RestaurantDashboardView } from './views/RestaurantDashboardView';
 import { NearbyFuturePostsView } from './views/NearbyFuturePostsView';
 import { FullMapView } from './views/FullMapView';
+import { ProfileCompletionModal } from './components/auth/ProfileCompletionModal';
+import { FirstLoginOnboardingModal } from './components/onboarding/FirstLoginOnboardingModal';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<User>(() => storageService.getCurrentUser());
@@ -18,6 +20,7 @@ export function App() {
     storageService.getNotifications(currentUser.id)
   );
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
+  const [showOnboardingTour, setShowOnboardingTour] = useState(false);
 
   // Sync notifications whenever currentUser changes
   useEffect(() => {
@@ -30,7 +33,11 @@ export function App() {
     if (user.role === 'restaurant') {
       setActiveTab('restaurant_portal');
     } else {
-      setActiveTab('feed'); // As requested: "khi bấm đăng nhập song , vào giao diện mặc định là phần tìm bạn ăn chung"
+      setActiveTab('feed');
+    }
+
+    if (user.isProfileCompleted && user.hasCompletedOnboardingTour === false) {
+      setShowOnboardingTour(true);
     }
   };
 
@@ -56,6 +63,28 @@ export function App() {
   // If not logged in, show the required 50/50 Split Screen
   if (!isLoggedIn) {
     return <AuthSplitView onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Guard: User must complete at least 80% profile before using Chạm Đũa
+  if (isLoggedIn && currentUser.isProfileCompleted === false) {
+    return (
+      <ProfileCompletionModal
+        user={currentUser}
+        onComplete={(completedUser) => {
+          setCurrentUser(completedUser);
+          storageService.updateUser(completedUser);
+          if (completedUser.role === 'restaurant') {
+            setActiveTab('restaurant_portal');
+          } else {
+            setActiveTab('feed');
+          }
+          if (completedUser.hasCompletedOnboardingTour === false) {
+            setShowOnboardingTour(true);
+          }
+        }}
+        onCancel={handleLogout}
+      />
+    );
   }
 
   // Once logged in, show main application with Navbar and default view "Tìm bạn ăn chung"
@@ -131,6 +160,19 @@ export function App() {
           {activeTab === 'restaurant_portal' ? '➔ Về Giao diện Khách' : '➔ Sang Quản trị Quán'}
         </button>
       </div>
+
+      {/* FIRST LOGIN ONBOARDING TOUR MODAL */}
+      {showOnboardingTour && (
+        <FirstLoginOnboardingModal
+          user={currentUser}
+          isOpen={showOnboardingTour}
+          onClose={() => setShowOnboardingTour(false)}
+          onFinish={(updated) => {
+            setCurrentUser(updated);
+            setShowOnboardingTour(false);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -14,10 +14,23 @@ import {
   Check,
   X,
   Share2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Briefcase,
+  GraduationCap,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Phone,
+  Mail,
+  Compass,
+  Clock,
+  Smile
 } from 'lucide-react';
 import { User, UserPost } from '../types';
 import { storageService } from '../services/storageService';
+import { VerificationModal } from '../components/auth/VerificationModal';
+import { SmartProfileModal } from '../components/profile/SmartProfileModal';
+import { FirstLoginOnboardingModal } from '../components/onboarding/FirstLoginOnboardingModal';
 
 interface UserProfileViewProps {
   currentUser: User;
@@ -31,6 +44,12 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<'posts' | 'preferences' | 'friends'>('posts');
   const [posts, setPosts] = useState<UserPost[]>(() => storageService.getPosts());
   const allUsers = storageService.getUsers();
+
+  // Modal states
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [verificationInitialTab, setVerificationInitialTab] = useState<'email' | 'phone'>('phone');
+  const [isSmartProfileModalOpen, setIsSmartProfileModalOpen] = useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
 
   // Edit profile state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -252,6 +271,187 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 {pref}
               </span>
             ))}
+          </div>
+
+        </div>
+      </div>
+
+      {/* VERIFICATION STATUS & TRUST BADGE BAR */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5 mr-1">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Trạng thái định danh:</span>
+          </span>
+
+          {/* Email badge */}
+          {currentUser.isEmailVerified ? (
+            <span className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Email đã xác thực: {currentUser.email}</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setVerificationInitialTab('email');
+                setIsVerificationModalOpen(true);
+              }}
+              className="px-3 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+              <span>Chưa xác minh Email • Nhấp để nhận mã OTP</span>
+            </button>
+          )}
+
+          {/* Phone badge */}
+          {currentUser.isPhoneVerified ? (
+            <span className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>SĐT đã xác thực: {currentUser.phone || '0901 234 567'}</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setVerificationInitialTab('phone');
+                setIsVerificationModalOpen(true);
+              }}
+              className="px-3 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+              <span>Chưa xác minh SĐT • Nhận OTP tăng +0.3 ★</span>
+            </button>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setVerificationInitialTab(currentUser.isPhoneVerified ? 'email' : 'phone');
+            setIsVerificationModalOpen(true);
+          }}
+          className="text-xs px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold flex items-center gap-1.5 transition-all shadow-xs self-stretch md:self-auto justify-center"
+        >
+          <Phone className="w-3.5 h-3.5 text-brand-400" />
+          <span>Bổ sung / Xác minh SĐT & Email</span>
+        </button>
+      </div>
+
+      {/* SMART PROFILE & OCCUPATION DASHBOARD CARD */}
+      <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-950 text-white p-5 sm:p-6 rounded-3xl border border-indigo-800/40 shadow-xl relative overflow-hidden">
+        {/* Glow effect */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-indigo-800/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-xl">
+              🧠
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-black text-base text-white">Smart Profile & Ghép Đôi AI</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500 text-white">
+                  Đang hoạt động
+                </span>
+              </div>
+              <p className="text-xs text-indigo-200">
+                Thuật toán ghép bàn ăn dựa trên nghề nghiệp, vibe trò chuyện và thói quen ẩm thực của bạn
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsOnboardingModalOpen(true)}
+              className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-all"
+            >
+              <Compass className="w-3.5 h-3.5 text-amber-300" />
+              <span>Xem lại Tour Chạm Đũa</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsSmartProfileModalOpen(true)}
+              className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-brand-500 hover:from-indigo-600 hover:to-brand-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/30 transition-all transform active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Chỉnh sửa Smart Profile</span>
+            </button>
+          </div>
+        </div>
+
+        {/* SMART PROFILE DETAILS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+          
+          {/* 1. OCCUPATION & COMPANY */}
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+            <span className="text-[11px] font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Briefcase className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Nghề nghiệp & Đơn vị</span>
+            </span>
+            <div className="text-sm font-bold text-white">
+              {currentUser.occupation || 'Kỹ sư phần mềm (Software Engineer)'}
+            </div>
+            <div className="text-xs text-slate-300 flex items-center gap-1">
+              <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
+              <span>{currentUser.companyOrSchool || 'VNG Tech Corp / ĐH Bách Khoa'}</span>
+            </div>
+          </div>
+
+          {/* 2. DINING VIBE */}
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+            <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Smile className="w-3.5 h-3.5 text-amber-400" />
+              <span>Vibe trên bàn ăn & Giao tiếp</span>
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {(currentUser.diningVibe && currentUser.diningVibe.length > 0
+                ? currentUser.diningVibe
+                : ['Vui vẻ hòa đồng', 'Networking chia sẻ kinh nghiệm IT', 'Chia bill sòng phẳng']
+              ).map((vibe) => (
+                <span
+                  key={vibe}
+                  className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-200 border border-amber-500/30 text-[11px] font-medium"
+                >
+                  {vibe}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* 3. EATING HABITS & TIMES */}
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+            <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Heart className="w-3.5 h-3.5 text-rose-400" />
+              <span>Khẩu vị & Khung giờ ưa thích</span>
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {(currentUser.eatingHabits && currentUser.eatingHabits.length > 0
+                ? currentUser.eatingHabits
+                : ['Thánh ăn cay cấp 3', 'Ăn nhiều thịt nướng', 'Không uống bia rượu']
+              ).map((habit) => (
+                <span
+                  key={habit}
+                  className="px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-200 border border-rose-500/30 text-[11px] font-medium"
+                >
+                  {habit}
+                </span>
+              ))}
+              {(currentUser.diningTimes && currentUser.diningTimes.length > 0
+                ? currentUser.diningTimes
+                : ['Bữa tối tan ca (18h30)']
+              ).map((time) => (
+                <span
+                  key={time}
+                  className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 text-[11px] font-medium flex items-center gap-1"
+                >
+                  <Clock className="w-2.5 h-2.5" />
+                  <span>{time}</span>
+                </span>
+              ))}
+            </div>
           </div>
 
         </div>
@@ -575,6 +775,38 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* VERIFICATION MODAL */}
+      <VerificationModal
+        user={currentUser}
+        isOpen={isVerificationModalOpen}
+        initialTab={verificationInitialTab}
+        onClose={() => setIsVerificationModalOpen(false)}
+        onVerified={(updated) => {
+          onUserUpdated(updated);
+        }}
+      />
+
+      {/* SMART PROFILE MODAL */}
+      <SmartProfileModal
+        user={currentUser}
+        isOpen={isSmartProfileModalOpen}
+        onClose={() => setIsSmartProfileModalOpen(false)}
+        onSave={(updated) => {
+          onUserUpdated(updated);
+        }}
+      />
+
+      {/* ONBOARDING TOUR MODAL */}
+      <FirstLoginOnboardingModal
+        user={currentUser}
+        isOpen={isOnboardingModalOpen}
+        onClose={() => setIsOnboardingModalOpen(false)}
+        onFinish={(updated) => {
+          onUserUpdated(updated);
+          setIsOnboardingModalOpen(false);
+        }}
+      />
 
     </div>
   );

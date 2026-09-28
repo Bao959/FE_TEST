@@ -18,7 +18,7 @@ import { User, Restaurant } from '../types';
 import { storageService } from '../services/storageService';
 import { InteractiveMap } from '../components/common/InteractiveMap';
 import { calculateDistanceKm, formatDistance } from '../utils/geo';
-import { ProfileCompletionModal } from '../components/auth/ProfileCompletionModal';
+import { SocialLoginModal } from '../components/auth/SocialLoginModal';
 
 interface AuthSplitViewProps {
   onLoginSuccess: (user: User) => void;
@@ -26,6 +26,7 @@ interface AuthSplitViewProps {
 
 export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) => {
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+  const [socialProvider, setSocialProvider] = useState<'google' | 'facebook' | null>(null);
   
   // Login states
   const [loginEmail, setLoginEmail] = useState('tuan.nguyen@foodie.vn');
@@ -38,9 +39,6 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regRole, setRegRole] = useState<'user' | 'restaurant'>('user');
-
-  // Onboarding state
-  const [onboardingUser, setOnboardingUser] = useState<User | null>(null);
 
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
 
@@ -88,16 +86,18 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
       email: regEmail.trim(),
       phone: regPhone.trim(),
       role: regRole,
-      bio: 'Thành viên mới gia nhập Chạm Đũa!',
-      foodPreferences: ['Lẩu & Nướng Than Hoa', 'Ăn Cay Cấp Độ 3'],
+      bio: '',
+      foodPreferences: [],
+      favoriteBudget: '',
       isProfileCompleted: false,
-      profileCompletionPercent: 45
+      profileCompletionPercent: 30
     });
 
     storageService.setCurrentUserId(newUser.id);
     
-    // Trigger the required >= 80% profile completion flow!
-    setOnboardingUser(newUser);
+    // User requested: "sau khi đăng ký mới vào mục hoàn thiện hồ sơ"
+    // Pass user to App.tsx which immediately renders ProfileCompletionModal
+    onLoginSuccess(newUser);
   };
 
   return (
@@ -376,6 +376,56 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
               </form>
             )}
 
+            {/* SOCIAL LOGIN UI: GOOGLE & FACEBOOK */}
+            <div className="mt-5 pt-4 border-t border-slate-700/60">
+              <div className="relative flex items-center justify-center mb-3">
+                <span className="px-2 bg-slate-800 text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                  Hoặc tiếp tục nhanh với
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* GOOGLE BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => setSocialProvider('google')}
+                  className="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs shadow-sm flex items-center justify-center gap-2.5 transition-all transform active:scale-95 border border-slate-200 group"
+                >
+                  <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.14C3.25 21.36 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.59H1.26C.46 8.19 0 9.99 0 12s.46 3.81 1.26 5.41l4.02-3.14z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.25 2.64 1.26 6.59l4.02 3.14c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                  <span className="group-hover:text-slate-950">Tiếp tục với Google</span>
+                </button>
+
+                {/* FACEBOOK BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => setSocialProvider('facebook')}
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2.5 transition-all transform active:scale-95 group"
+                >
+                  <svg className="w-4 h-4 fill-white flex-shrink-0" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                  <span>Tiếp tục với Facebook</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -468,13 +518,15 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
 
       </div>
 
-      {/* 80% PROFILE COMPLETION MODAL */}
-      {onboardingUser && (
-        <ProfileCompletionModal
-          user={onboardingUser}
-          onComplete={(completedUser) => {
-            setOnboardingUser(null);
-            onLoginSuccess(completedUser);
+      {/* SOCIAL LOGIN MODAL (GOOGLE / FACEBOOK) */}
+      {socialProvider && (
+        <SocialLoginModal
+          provider={socialProvider}
+          isOpen={!!socialProvider}
+          onClose={() => setSocialProvider(null)}
+          onSuccess={(loggedInUser) => {
+            setSocialProvider(null);
+            onLoginSuccess(loggedInUser);
           }}
         />
       )}

@@ -11,7 +11,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Heart,
-  Smile
+  Smile,
+  Briefcase
 } from 'lucide-react';
 import { User } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -19,6 +20,7 @@ import { storageService } from '../../services/storageService';
 interface ProfileCompletionModalProps {
   user: User;
   onComplete: (completedUser: User) => void;
+  onCancel?: () => void;
 }
 
 const PRESET_AVATARS = [
@@ -65,17 +67,32 @@ const DISTRICT_OPTIONS = [
   'Quận Đống Đa, Hà Nội'
 ];
 
+export const OCCUPATION_OPTIONS = [
+  'Kỹ sư phần mềm (Software Engineer / IT)',
+  'UI/UX & Thiết kế đồ họa',
+  'Marketing, Truyền Thông & Sáng tạo',
+  'Sinh viên đại học / Cao đẳng',
+  'Kinh doanh, Sales & Khởi nghiệp',
+  'Tài chính, Kế toán & Ngân hàng',
+  'Bác sĩ, Dược sĩ & Y tế',
+  'Nhân sự (HR) & Vận hành',
+  'Freelancer / Tự do'
+];
+
 export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   user,
-  onComplete
+  onComplete,
+  onCancel
 }) => {
   const [fullName, setFullName] = useState(user.name || '');
   const [selectedAvatar, setSelectedAvatar] = useState(user.avatar || PRESET_AVATARS[0]);
   const [phone, setPhone] = useState(user.phone || '');
   const [bio, setBio] = useState(user.bio || '');
   const [district, setDistrict] = useState(user.location?.address || DISTRICT_OPTIONS[0]);
+  const [occupation, setOccupation] = useState(user.occupation || OCCUPATION_OPTIONS[0]);
+  const [companyOrSchool, setCompanyOrSchool] = useState(user.companyOrSchool || '');
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>(user.foodPreferences || []);
-  const [favoriteBudget, setFavoriteBudget] = useState(user.favoriteBudget || BUDGET_OPTIONS[1]);
+  const [favoriteBudget, setFavoriteBudget] = useState(user.favoriteBudget || '');
 
   // Real-time calculation of profile completion percentage
   const calculatePercent = () => {
@@ -86,6 +103,8 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     if (selectedAvatar) score += 15;
     // Phone: +15% (optional to skip, but gives 15%)
     if (phone.trim().length >= 9) score += 15;
+    // Occupation: +15%
+    if (occupation) score += 15;
     // Bio: +15% (>= 10 chars)
     if (bio.trim().length >= 10) score += 15;
     // Address / District: +15%
@@ -127,6 +146,8 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       bio: bio.trim() || 'Thành viên mới gia nhập Chạm Đũa!',
       foodPreferences: selectedPreferences,
       favoriteBudget: favoriteBudget,
+      occupation: occupation,
+      companyOrSchool: companyOrSchool.trim(),
       location: {
         ...user.location,
         address: district
@@ -145,16 +166,28 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
         
         {/* HEADER & PROGRESS BAR */}
         <div className="p-5 sm:p-6 bg-gradient-to-r from-brand-600 via-orange-600 to-amber-500 text-white">
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl">🥢</span>
-            <div>
-              <h2 className="text-lg sm:text-xl font-black tracking-tight">
-                Hoàn Thiện Hồ Sơ Chạm Đũa
-              </h2>
-              <p className="text-xs text-amber-100 mt-0.5">
-                Yêu cầu hoàn thiện <strong>tối thiểu 80%</strong> để mở khóa tính năng tìm bạn ăn chung & săn deal.
-              </p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl">🥢</span>
+              <div>
+                <h2 className="text-lg sm:text-xl font-black tracking-tight">
+                  Hoàn Thiện Hồ Sơ Chạm Đũa
+                </h2>
+                <p className="text-xs text-amber-100 mt-0.5">
+                  Yêu cầu hoàn thiện <strong>tối thiểu 80%</strong> để mở khóa tính năng tìm bạn ăn chung & săn deal.
+                </p>
+              </div>
             </div>
+
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-amber-100 hover:text-white transition-all border border-white/20"
+              >
+                Đăng xuất
+              </button>
+            )}
           </div>
 
           {/* Progress Bar Container */}
@@ -276,6 +309,39 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="VD: 0909 123 456"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-500"
+                />
+              </div>
+            </div>
+
+            {/* OCCUPATION & WORKPLACE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                  <Briefcase className="w-3.5 h-3.5 text-brand-600" /> Nghề nghiệp / Lĩnh vực (+15%)
+                </label>
+                <select
+                  value={occupation}
+                  onChange={(e) => setOccupation(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-500 bg-white"
+                >
+                  {OCCUPATION_OPTIONS.map((occ) => (
+                    <option key={occ} value={occ}>
+                      {occ}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Nơi làm việc / Trường học
+                </label>
+                <input
+                  type="text"
+                  placeholder="VD: VNG, FPT, ĐH Bách Khoa..."
+                  value={companyOrSchool}
+                  onChange={(e) => setCompanyOrSchool(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-500"
                 />
               </div>

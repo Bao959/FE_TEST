@@ -19,6 +19,24 @@ export interface User {
     lng: number;
     address: string;
   };
+
+  // Google / Facebook Social Provider
+  socialProvider?: 'google' | 'facebook' | 'local';
+
+  // Email & Phone Verification
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+
+  // Smart Profile + Occupation + Tags
+  occupation?: string;           // E.g. "Software Engineer / IT", "Thiết kế đồ họa", "Sinh viên"
+  companyOrSchool?: string;      // E.g. "VNG Corp", "Đại học Bách Khoa"
+  smartTags?: string[];          // General smart tags
+  eatingHabits?: string[];       // E.g. "Không ăn hành", "Ăn chay", "Ăn cay cấp độ 3"
+  diningVibe?: string[];         // E.g. "Vui vẻ hòa đồng", "Networking công việc", "Thích chụp ảnh check-in"
+  diningTimes?: string[];        // E.g. "Bữa trưa văn phòng 12h", "Bữa tối sau giờ làm 18h30"
+
+  // First-login Onboarding tour flag
+  hasCompletedOnboardingTour?: boolean;
 }
 
 export interface MenuItem {

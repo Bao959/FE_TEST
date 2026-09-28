@@ -340,10 +340,16 @@ export const DiningFeedView: React.FC<DiningFeedViewProps> = ({
                     
                     {/* Session Title & Note */}
                     <div>
-                      <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-brand-600 transition-colors">
-                        {session.title}
-                      </h4>
-                      <p className="text-xs text-slate-600 line-clamp-2 mt-1 leading-relaxed">
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-brand-600 transition-colors">
+                          {session.title}
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-extrabold flex items-center gap-0.5 flex-shrink-0">
+                          <Sparkles className="w-2.5 h-2.5 text-indigo-600" />
+                          <span>92% Hợp gu</span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                         "{session.note}"
                       </p>
                     </div>

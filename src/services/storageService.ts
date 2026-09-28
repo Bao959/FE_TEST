@@ -71,7 +71,17 @@ class StorageService {
   // Users
   public getUsers(): User[] {
     const raw = localStorage.getItem(STORAGE_KEYS.USERS);
-    return raw ? JSON.parse(raw) : INITIAL_USERS;
+    if (!raw) return INITIAL_USERS;
+    try {
+      const users: User[] = JSON.parse(raw);
+      return users.map((u) => ({
+        ...u,
+        isProfileCompleted: u.isProfileCompleted !== undefined ? u.isProfileCompleted : true,
+        profileCompletionPercent: u.profileCompletionPercent !== undefined ? u.profileCompletionPercent : 100
+      }));
+    } catch {
+      return INITIAL_USERS;
+    }
   }
 
   public getUser(userId: string): User | undefined {
@@ -89,14 +99,28 @@ class StorageService {
       id: `user_${Date.now()}`,
       name: userData.name || 'Người dùng mới',
       email: userData.email || 'user@foodie.vn',
-      avatar: userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`,
+      phone: userData.phone || '',
+      avatar: userData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       role: userData.role || 'user',
       restaurantId: userData.restaurantId,
-      bio: userData.bio || 'Yêu thích ẩm thực và kết bạn bốn phương!',
-      foodPreferences: userData.foodPreferences || ['Lẩu & Nướng', 'Ăn vặt'],
+      bio: userData.bio !== undefined ? userData.bio : '',
+      foodPreferences: userData.foodPreferences || [],
+      favoriteBudget: userData.favoriteBudget || '',
       friends: ['user_1', 'user_2'],
       trustScore: 5.0,
       totalMealsJoined: 0,
+      profileCompletionPercent: userData.profileCompletionPercent ?? 30,
+      isProfileCompleted: userData.isProfileCompleted ?? false,
+      socialProvider: userData.socialProvider || 'local',
+      isEmailVerified: userData.isEmailVerified ?? false,
+      isPhoneVerified: userData.isPhoneVerified ?? false,
+      occupation: userData.occupation || '',
+      companyOrSchool: userData.companyOrSchool || '',
+      smartTags: userData.smartTags || [],
+      eatingHabits: userData.eatingHabits || [],
+      diningVibe: userData.diningVibe || [],
+      diningTimes: userData.diningTimes || [],
+      hasCompletedOnboardingTour: userData.hasCompletedOnboardingTour ?? false,
       location: userData.location || {
         lat: 10.7769,
         lng: 106.7009,

@@ -105,9 +105,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   // Reports filter
   const [reportStatusFilter, setReportStatusFilter] = useState<'ALL' | 'PENDING' | 'RESOLVED' | 'DISMISSED'>('ALL');
 
-  // 7-Day Revenue & Chart State
+  // 7-Day Revenue & MoMo Chart State
   const [chartMetric, setChartMetric] = useState<'gmv' | 'tables'>('gmv');
+  const [chartTimeRange, setChartTimeRange] = useState<'7d' | '30d' | 'month'>('7d');
+  const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(5); // Default highlight Saturday peak
   const [selectedDistrict, setSelectedDistrict] = useState<string>('q1');
+  const [selectedCuisineIdx, setSelectedCuisineIdx] = useState<number | null>(null);
 
   // District Hotspots Data (Sơ đồ phân bổ bàn ghép theo khu vực ẩm thực)
   const districtHotspots = [
@@ -551,138 +554,353 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
 
-          {/* SƠ ĐỒ 1: BIỂU ĐỒ DOANH SỐ & LƯỢNG BÀN GHÉP 7 NGÀY QUA (ELEGANT SAAS BAR CHART) */}
-          <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* SƠ ĐỒ 1: BIỂU ĐỒ TĂNG TRƯỞNG DOANH SỐ GMV TOÀN SÀN (PHONG CÁCH TĂNG TRƯỞNG MOMO) */}
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] space-y-6">
+            
+            {/* Header: Title + MoMo Pills & Switchers */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-xl bg-brand-50 text-brand-600 border border-brand-200">
-                    <BarChart2 className="w-4 h-4" />
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-amber-500 text-white shadow-md shadow-brand-500/25">
+                    <TrendingUp className="w-5 h-5" />
                   </div>
-                  <h3 className="font-black text-base text-slate-900">
-                    Sơ Đồ Doanh Số & Lượng Bàn Ăn Ghép 7 Ngày Qua
-                  </h3>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-black text-lg text-slate-900 tracking-tight">
+                        Biểu Đồ Tăng Trưởng Doanh Số GMV Hệ Thống
+                      </h3>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200 uppercase tracking-wide">
+                        MoMo Growth Style
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Đường cong tăng trưởng doanh thu liên tục và đối chiếu so sánh cùng kỳ tuần trước
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Phân tích chu kỳ đặt bàn trong tuần: Thứ Sáu & Thứ Bảy là 2 ngày bùng nổ công suất lẩu nướng
-                </p>
               </div>
 
-              {/* Chart Controls & Switcher */}
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+              {/* Controls: Time range & Metric Switcher */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {/* Time Range Selector */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
+                  {(['7d', '30d', 'month'] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setChartTimeRange(r)}
+                      className={`px-3 py-1.5 rounded-xl transition-all ${
+                        chartTimeRange === r
+                          ? 'bg-slate-900 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {r === '7d' && '7 Ngày Qua'}
+                      {r === '30d' && '30 Ngày'}
+                      {r === 'month' && 'Tháng Này'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Metric Selector */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
                   <button
                     onClick={() => setChartMetric('gmv')}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                    className={`px-3 py-1.5 rounded-xl transition-all ${
                       chartMetric === 'gmv'
-                        ? 'bg-slate-900 text-white shadow-xs'
+                        ? 'bg-brand-600 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    💰 Doanh Số GMV
+                    💰 GMV (VNĐ)
                   </button>
                   <button
                     onClick={() => setChartMetric('tables')}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                    className={`px-3 py-1.5 rounded-xl transition-all ${
                       chartMetric === 'tables'
-                        ? 'bg-slate-900 text-white shadow-xs'
+                        ? 'bg-brand-600 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    🍽️ Lượng Bàn Ghép
+                    🍽️ Bàn Ghép
                   </button>
                 </div>
+              </div>
+            </div>
 
-                <span className="hidden sm:inline-flex items-center gap-1.5 text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 text-xs font-black">
-                  🔥 Cuối tuần cao điểm (+85%)
+            {/* MoMo Headline Growth Metric Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-white border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                  {hoveredPointIndex !== null
+                    ? `${revenue7Days[hoveredPointIndex].day} (${revenue7Days[hoveredPointIndex].date})`
+                    : 'Tổng Doanh Số Tuần Này (Toàn Sàn)'}
+                </span>
+                <div className="flex items-baseline gap-3 mt-0.5">
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                    {hoveredPointIndex !== null
+                      ? chartMetric === 'gmv'
+                        ? formatCurrency(revenue7Days[hoveredPointIndex].gmv)
+                        : `${revenue7Days[hoveredPointIndex].tables} bàn ghép`
+                      : chartMetric === 'gmv'
+                        ? '168.200.000 đ'
+                        : '334 bàn ghép'}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black border border-emerald-200">
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                    {hoveredPointIndex !== null && revenue7Days[hoveredPointIndex].isPeak
+                      ? '+85.2% Kỷ Lục Cuối Tuần 🔥'
+                      : '+24.8% Tăng Trưởng'}
+                  </span>
+                </div>
+              </div>
+
+              {/* MoMo Legend */}
+              <div className="flex items-center gap-4 text-xs font-bold self-start sm:self-center">
+                <span className="flex items-center gap-1.5 text-slate-800">
+                  <span className="w-3 h-3 rounded-full bg-gradient-to-tr from-brand-600 to-amber-500 shadow-xs" />
+                  Tuần Này (Thực tế)
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-400">
+                  <span className="w-4 border-b-2 border-dashed border-slate-400" />
+                  Tuần Trước (Đối chiếu)
                 </span>
               </div>
             </div>
 
-            {/* Interactive SVG Bar Chart Container with horizontal guideline scale */}
-            <div className="relative pt-6 pb-2">
-              {/* Background Guidelines */}
-              <div className="absolute inset-x-0 top-6 bottom-10 flex flex-col justify-between pointer-events-none opacity-40">
-                <div className="border-b border-dashed border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
-                  <span>{chartMetric === 'gmv' ? '40.000.000đ' : '80 bàn'}</span>
-                </div>
-                <div className="border-b border-dashed border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
-                  <span>{chartMetric === 'gmv' ? '30.000.000đ' : '60 bàn'}</span>
-                </div>
-                <div className="border-b border-dashed border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
-                  <span>{chartMetric === 'gmv' ? '20.000.000đ' : '40 bàn'}</span>
-                </div>
-                <div className="border-b border-dashed border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
-                  <span>{chartMetric === 'gmv' ? '10.000.000đ' : '20 bàn'}</span>
-                </div>
-              </div>
+            {/* SVG MoMo Smooth Wave Area Chart */}
+            <div className="relative pt-2 pb-2">
+              <svg viewBox="0 0 760 220" className="w-full h-56 sm:h-64 overflow-visible select-none">
+                <defs>
+                  {/* MoMo Translucent Glow Gradient for Area */}
+                  <linearGradient id="momoAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f97316" stopOpacity="0.45" />
+                    <stop offset="50%" stopColor="#f97316" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="#f97316" stopOpacity="0.0" />
+                  </linearGradient>
 
-              {/* 7 Columns */}
-              <div className="relative z-10 grid grid-cols-7 gap-2 sm:gap-6 items-end h-60 px-2 sm:px-6 border-b-2 border-slate-200">
-                {revenue7Days.map((item, idx) => {
-                  const barHeight = chartMetric === 'gmv' 
-                    ? item.heightPercent 
-                    : Math.round((item.tables / 80) * 100);
+                  {/* MoMo Vibrant Line Gradient */}
+                  <linearGradient id="momoLineGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#f59e0b" />
+                    <stop offset="70%" stopColor="#ea580c" />
+                    <stop offset="100%" stopColor="#f97316" />
+                  </linearGradient>
+
+                  {/* Drop Shadow Glow Filter */}
+                  <filter id="momoGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#ea580c" floodOpacity="0.3" />
+                  </filter>
+                </defs>
+
+                {/* Horizontal reference guide lines */}
+                <g className="opacity-30">
+                  <line x1="40" y1="35" x2="720" y2="35" stroke="#94a3b8" strokeDasharray="4 4" />
+                  <text x="35" y="39" textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="bold">
+                    {chartMetric === 'gmv' ? '40M' : '80'}
+                  </text>
+
+                  <line x1="40" y1="80" x2="720" y2="80" stroke="#94a3b8" strokeDasharray="4 4" />
+                  <text x="35" y="84" textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="bold">
+                    {chartMetric === 'gmv' ? '30M' : '60'}
+                  </text>
+
+                  <line x1="40" y1="125" x2="720" y2="125" stroke="#94a3b8" strokeDasharray="4 4" />
+                  <text x="35" y="129" textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="bold">
+                    {chartMetric === 'gmv' ? '20M' : '40'}
+                  </text>
+
+                  <line x1="40" y1="170" x2="720" y2="170" stroke="#94a3b8" strokeDasharray="4 4" />
+                  <text x="35" y="174" textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="bold">
+                    {chartMetric === 'gmv' ? '10M' : '20'}
+                  </text>
+
+                  <line x1="40" y1="205" x2="720" y2="205" stroke="#cbd5e1" strokeWidth="1.5" />
+                </g>
+
+                {/* 1. Comparison Curve: Last Week (Dashed Gray) */}
+                <path
+                  d="M 60,152 C 115,152 115,140 170,140 C 225,140 225,134 280,134 C 335,134 335,124 390,124 C 445,124 445,102 500,102 C 555,102 555,80 610,80 C 665,80 665,108 710,108"
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="2.5"
+                  strokeDasharray="5 5"
+                />
+
+                {/* 2. MoMo Growth Gradient Area Fill (This Week) */}
+                <path
+                  d="M 60,133.2 C 115,133.2 115,122.8 170,122.8 C 225,122.8 225,116.0 280,116.0 C 335,116.0 335,100.4 390,100.4 C 445,100.4 445,63.6 500,63.6 C 555,63.6 555,37.2 610,37.2 C 665,37.2 665,84.0 710,84.0 L 710,205 L 60,205 Z"
+                  fill="url(#momoAreaGradient)"
+                />
+
+                {/* 3. MoMo Smooth Main Spline Curve */}
+                <path
+                  d="M 60,133.2 C 115,133.2 115,122.8 170,122.8 C 225,122.8 225,116.0 280,116.0 C 335,116.0 335,100.4 390,100.4 C 445,100.4 445,63.6 500,63.6 C 555,63.6 555,37.2 610,37.2 C 665,37.2 665,84.0 710,84.0"
+                  fill="none"
+                  stroke="url(#momoLineGradient)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  filter="url(#momoGlow)"
+                />
+
+                {/* Vertical Guideline & Tooltip when a point is hovered */}
+                {hoveredPointIndex !== null && (() => {
+                  const nodePositions = [
+                    { x: 60, y: 133.2 },
+                    { x: 170, y: 122.8 },
+                    { x: 280, y: 116.0 },
+                    { x: 390, y: 100.4 },
+                    { x: 500, y: 63.6 },
+                    { x: 610, y: 37.2 },
+                    { x: 710, y: 84.0 }
+                  ];
+                  const cur = nodePositions[hoveredPointIndex];
+                  const item = revenue7Days[hoveredPointIndex];
 
                   return (
-                    <div key={idx} className="flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
-                      {/* Floating Metric Label on Bar */}
-                      <div className="text-[11px] font-black text-slate-700 group-hover:text-brand-600 transition-colors whitespace-nowrap">
-                        {chartMetric === 'gmv' ? `${(item.gmv / 1000000).toFixed(1)}M` : `${item.tables} bàn`}
-                      </div>
+                    <g>
+                      {/* Vertical highlight line */}
+                      <line
+                        x1={cur.x}
+                        y1="25"
+                        x2={cur.x}
+                        y2="205"
+                        stroke="#f97316"
+                        strokeWidth="1.5"
+                        strokeDasharray="3 3"
+                        className="animate-pulse"
+                      />
 
-                      {/* Bar Column Track */}
-                      <div className="w-full max-w-[44px] bg-slate-50 hover:bg-slate-100 rounded-t-xl p-0.5 flex items-end h-full transition-colors">
-                        <div
-                          className={`w-full rounded-t-lg transition-all duration-500 group-hover:brightness-110 shadow-sm ${
-                            item.isPeak
-                              ? 'bg-gradient-to-t from-brand-600 via-amber-500 to-amber-400 shadow-md shadow-brand-500/25 ring-2 ring-brand-400/40'
-                              : 'bg-gradient-to-t from-amber-500/80 via-amber-400 to-amber-300'
-                          }`}
-                          style={{ height: `${barHeight}%` }}
+                      {/* Floating Tooltip Box */}
+                      <g transform={`translate(${Math.max(70, Math.min(640, cur.x))}, ${Math.max(25, cur.y - 32)})`}>
+                        <rect
+                          x="-55"
+                          y="-18"
+                          width="110"
+                          height="26"
+                          rx="8"
+                          fill="#0f172a"
+                          className="shadow-xl"
                         />
-                      </div>
+                        <text
+                          x="0"
+                          y="-1"
+                          textAnchor="middle"
+                          fill="#ffffff"
+                          fontSize="11"
+                          fontWeight="bold"
+                        >
+                          {chartMetric === 'gmv' ? formatCurrency(item.gmv) : `${item.tables} bàn ghép`}
+                        </text>
+                      </g>
+                    </g>
+                  );
+                })()}
 
-                      {/* Date label */}
-                      <div className="text-center mt-2">
-                        <span className={`block text-xs font-black ${item.isPeak ? 'text-brand-600' : 'text-slate-800'}`}>
-                          {item.day}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-medium">{item.date}</span>
-                      </div>
+                {/* 4. Interactive Node Dots on the Curve */}
+                {[
+                  { x: 60, y: 133.2, idx: 0 },
+                  { x: 170, y: 122.8, idx: 1 },
+                  { x: 280, y: 116.0, idx: 2 },
+                  { x: 390, y: 100.4, idx: 3 },
+                  { x: 500, y: 63.6, idx: 4 },
+                  { x: 610, y: 37.2, idx: 5 },
+                  { x: 710, y: 84.0, idx: 6 }
+                ].map((pt) => {
+                  const isHovered = hoveredPointIndex === pt.idx;
+                  const isPeak = revenue7Days[pt.idx].isPeak;
+
+                  return (
+                    <g
+                      key={pt.idx}
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredPointIndex(pt.idx)}
+                    >
+                      {/* Outer pulse halo for hovered or peak node */}
+                      {(isHovered || isPeak) && (
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={isHovered ? '9' : '7'}
+                          fill={isPeak ? '#ea580c' : '#f97316'}
+                          opacity={isHovered ? '0.35' : '0.2'}
+                          className="animate-ping"
+                        />
+                      )}
+
+                      {/* Outer ring */}
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={isHovered ? '7' : isPeak ? '6' : '5'}
+                        fill="#ffffff"
+                        stroke={isPeak ? '#ea580c' : '#f97316'}
+                        strokeWidth="3"
+                        className="transition-all duration-200"
+                      />
+
+                      {/* Invisible hover target */}
+                      <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {/* X-Axis Day Labels below SVG */}
+              <div className="grid grid-cols-7 gap-1 text-center pt-2 px-3 sm:px-6">
+                {revenue7Days.map((item, idx) => {
+                  const isSelected = hoveredPointIndex === idx;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setHoveredPointIndex(idx)}
+                      onMouseEnter={() => setHoveredPointIndex(idx)}
+                      className={`cursor-pointer py-1.5 rounded-xl transition-all ${
+                        isSelected
+                          ? 'bg-amber-100/80 text-brand-700 font-black shadow-xs scale-105'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="block text-xs font-black">
+                        {item.day} {item.isPeak && '🔥'}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block font-medium">{item.date}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Bottom 3 Summary Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 flex items-center justify-between">
+            {/* Bottom 3 MoMo Insight Growth Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1 text-xs">
+              <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 flex items-center justify-between">
                 <div>
-                  <span className="text-slate-500 block font-medium">Doanh số TB ngày thường:</span>
-                  <strong className="text-slate-900 text-sm font-black mt-0.5 block">17.975.000đ / ngày</strong>
-                </div>
-                <Calendar className="w-5 h-5 text-slate-400" />
-              </div>
-              <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between">
-                <div>
-                  <span className="text-amber-800 block font-medium">Doanh số TB cuối tuần:</span>
-                  <strong className="text-amber-950 text-sm font-black mt-0.5 block">34.900.000đ / ngày</strong>
+                  <span className="text-amber-800 block font-medium">Bùng Nổ Tăng Trưởng Cuối Tuần:</span>
+                  <strong className="text-amber-950 text-sm font-black mt-0.5 block">+85.2% công suất đặt tiệc</strong>
+                  <span className="text-[10px] text-amber-700">Tập trung tối Thứ 6 & Thứ 7</span>
                 </div>
                 <Flame className="w-5 h-5 text-amber-500" />
               </div>
-              <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between">
+
+              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
                 <div>
-                  <span className="text-emerald-800 block font-medium">Tỷ lệ lấp đầy bàn tiệc TB:</span>
-                  <strong className="text-emerald-950 text-sm font-black mt-0.5 block">89.2% công suất bàn lớn</strong>
+                  <span className="text-emerald-800 block font-medium">Thanh Toán Chạm Đũa Pay:</span>
+                  <strong className="text-emerald-950 text-sm font-black mt-0.5 block">100% không phát sinh tiền mặt</strong>
+                  <span className="text-[10px] text-emerald-700">Tự động chia hóa đơn theo đầu người</span>
                 </div>
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200 flex items-center justify-between">
+                <div>
+                  <span className="text-sky-800 block font-medium">Tỷ Lệ Ghép Bàn Thành Công:</span>
+                  <strong className="text-sky-950 text-sm font-black mt-0.5 block">96.4% không bùng hẹn</strong>
+                  <span className="text-[10px] text-sky-700">TB: 4.2 khách/bàn tiệc</span>
+                </div>
+                <TrendingUp className="w-5 h-5 text-sky-600" />
               </div>
             </div>
           </div>
 
-          {/* SƠ ĐỒ 2: PHÂN BỔ BÀN GHÉP THEO KHU VỰC ẨM THỰC (REPLACED FUNNEL) & CƠ CẤU MÓN ĂN */}
+          {/* SƠ ĐỒ 2: PHÂN BỔ BÀN GHÉP THEO KHU VỰC ẨM THỰC & CƠ CẤU MÓN ĂN CHI TIẾT QUÁN */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* SƠ ĐỒ 2: BẢN ĐỒ PHÂN BỔ BÀN GHÉP THEO ĐIỂM NÓNG ẨM THỰC */}
@@ -783,7 +1001,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* SƠ ĐỒ CƠ CẤU KHẨU VỊ & KHUNG GIỜ CAO ĐIỂM */}
+            {/* SƠ ĐỒ CƠ CẤU KHẨU VỊ & CHI TIẾT QUÁN ĂN (ẢNH 1 - CHI TIẾT QUÁN NÀO) */}
             <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] space-y-4 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between">
@@ -793,82 +1011,167 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
                     <div>
                       <h3 className="font-black text-sm sm:text-base text-slate-900">
-                        Cơ Cấu Khẩu Vị & Khung Giờ Cao Điểm
+                        Cơ Cấu Khẩu Vị & Chi Tiết Quán Đang Phục Vụ
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Thị phần sở thích ẩm thực thực khách tìm kiếm hôm nay
+                        Thị phần tìm kiếm và chi tiết danh sách quán ăn đón khách hôm nay
                       </p>
                     </div>
                   </div>
                   <span className="text-[11px] font-bold text-slate-500">Thời gian thực</span>
                 </div>
 
-                {/* Category Breakdown Bars */}
-                <div className="space-y-3 mt-5 text-xs">
-                  <div>
-                    <div className="flex justify-between font-black mb-1.5 text-slate-800">
+                {/* Category Breakdown with Detailed Specific Restaurants */}
+                <div className="space-y-4 mt-5 text-xs">
+                  
+                  {/* Category 1: Lẩu */}
+                  <div className="p-3 rounded-2xl bg-orange-50/40 border border-orange-200/70 space-y-2">
+                    <div className="flex justify-between font-black text-slate-800">
                       <span className="flex items-center gap-1.5">🍲 Lẩu Trung Hoa, Lẩu Nấm, Lẩu Bò</span>
                       <span className="text-brand-600 font-extrabold">48% (160 bàn)</span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                      <div className="bg-gradient-to-r from-brand-600 to-amber-500 h-2.5 rounded-full" style={{ width: '48%' }} />
+                    <div className="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden">
+                      <div className="bg-gradient-to-r from-brand-600 to-amber-500 h-2 rounded-full" style={{ width: '48%' }} />
+                    </div>
+                    {/* CHI TIẾT CÁC QUÁN NÀO */}
+                    <div className="pt-1.5 border-t border-orange-200/50">
+                      <span className="text-[10px] text-slate-500 font-bold block mb-1">
+                        📍 Chi tiết quán đang đón khách lẩu:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-orange-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🥘 Haidilao Bitexco</span>
+                          <span className="text-[10px] text-brand-600 font-black">(68 bàn • Q.1)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-orange-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🥘 Lẩu Bò Nhà Gỗ</span>
+                          <span className="text-[10px] text-brand-600 font-black">(52 bàn • Q.3)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-orange-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🥘 Manwah Taiwanese</span>
+                          <span className="text-[10px] text-brand-600 font-black">(40 bàn • Bình Thạnh)</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex justify-between font-black mb-1.5 text-slate-800">
+                  {/* Category 2: Nướng BBQ */}
+                  <div className="p-3 rounded-2xl bg-amber-50/40 border border-amber-200/70 space-y-2">
+                    <div className="flex justify-between font-black text-slate-800">
                       <span className="flex items-center gap-1.5">🥩 Nướng Than Hoa & BBQ Hàn Quốc</span>
                       <span className="text-amber-600 font-extrabold">26% (87 bàn)</span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                      <div className="bg-gradient-to-r from-amber-500 to-amber-400 h-2.5 rounded-full" style={{ width: '26%' }} />
+                    <div className="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden">
+                      <div className="bg-gradient-to-r from-amber-500 to-amber-400 h-2 rounded-full" style={{ width: '26%' }} />
+                    </div>
+                    {/* CHI TIẾT CÁC QUÁN NÀO */}
+                    <div className="pt-1.5 border-t border-amber-200/50">
+                      <span className="text-[10px] text-slate-500 font-bold block mb-1">
+                        📍 Chi tiết quán đang đón khách nướng BBQ:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-amber-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🥩 Gogi House Nguyễn Huệ</span>
+                          <span className="text-[10px] text-amber-700 font-black">(46 bàn • Q.1)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-amber-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🥩 K-Pub Grill & Beer</span>
+                          <span className="text-[10px] text-amber-700 font-black">(25 bàn • Q.5)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-amber-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🥩 Sườn Cây Nướng</span>
+                          <span className="text-[10px] text-amber-700 font-black">(16 bàn • Q.10)</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex justify-between font-black mb-1.5 text-slate-800">
+                  {/* Category 3: Ốc & Hải Sản */}
+                  <div className="p-3 rounded-2xl bg-sky-50/40 border border-sky-200/70 space-y-2">
+                    <div className="flex justify-between font-black text-slate-800">
                       <span className="flex items-center gap-1.5">🦪 Ốc Sài Gòn & Hải Sản Tươi Sống</span>
                       <span className="text-sky-600 font-extrabold">16% (53 bàn)</span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                      <div className="bg-gradient-to-r from-sky-500 to-teal-400 h-2.5 rounded-full" style={{ width: '16%' }} />
+                    <div className="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden">
+                      <div className="bg-gradient-to-r from-sky-500 to-teal-400 h-2 rounded-full" style={{ width: '16%' }} />
+                    </div>
+                    {/* CHI TIẾT CÁC QUÁN NÀO */}
+                    <div className="pt-1.5 border-t border-sky-200/50">
+                      <span className="text-[10px] text-slate-500 font-bold block mb-1">
+                        📍 Chi tiết quán đang đón khách ốc & hải sản:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-sky-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🦪 Ốc Đào Nguyễn Trãi</span>
+                          <span className="text-[10px] text-sky-700 font-black">(32 bàn • Q.1)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-sky-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🦪 Hải Sản Biển Đông</span>
+                          <span className="text-[10px] text-sky-700 font-black">(14 bàn • Q.7)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-sky-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🦪 Ốc Oanh Vĩnh Khánh</span>
+                          <span className="text-[10px] text-sky-700 font-black">(7 bàn • Q.4)</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex justify-between font-black mb-1.5 text-slate-800">
+                  {/* Category 4: Nhật & Cơm Niêu */}
+                  <div className="p-3 rounded-2xl bg-emerald-50/40 border border-emerald-200/70 space-y-2">
+                    <div className="flex justify-between font-black text-slate-800">
                       <span className="flex items-center gap-1.5">🍱 Ẩm Thực Nhật Bản & Cơm Niêu</span>
                       <span className="text-emerald-600 font-extrabold">10% (34 bàn)</span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-2.5 rounded-full" style={{ width: '10%' }} />
+                    <div className="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden">
+                      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full" style={{ width: '10%' }} />
+                    </div>
+                    {/* CHI TIẾT CÁC QUÁN NÀO */}
+                    <div className="pt-1.5 border-t border-emerald-200/50">
+                      <span className="text-[10px] text-slate-500 font-bold block mb-1">
+                        📍 Chi tiết quán đang đón khách Nhật & Cơm Niêu:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-emerald-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🍱 Sushi Tei Lê Thánh Tôn</span>
+                          <span className="text-[10px] text-emerald-700 font-black">(19 bàn • Q.1)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-emerald-200 text-slate-900 text-[11px] font-bold shadow-2xs">
+                          <span>🍱 Cơm Niêu Sài Gòn Tú Xương</span>
+                          <span className="text-[10px] text-emerald-700 font-black">(15 bàn • Q.3)</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
+
                 </div>
               </div>
 
-              {/* Peak Hours Traffic Heatmap */}
-              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+              {/* Peak Hours Traffic Heatmap với chi tiết quán đông nhất */}
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5">
                 <span className="text-xs font-black text-slate-900 block">
-                  Tỷ Lệ Lấp Đầy Theo Khung Giờ Ăn:
+                  Tỷ Lệ Lấp Đầy & Quán Đông Nhất Theo Khung Giờ Ăn:
                 </span>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="p-2.5 rounded-2xl bg-amber-50/70 border border-amber-200">
                     <span className="text-[10px] text-amber-800 block font-semibold">Trưa văn phòng</span>
                     <strong className="text-xs sm:text-sm font-black text-amber-950">11h30 - 13h30</strong>
                     <span className="block text-[10px] text-amber-700 font-bold mt-0.5">88% lấp đầy</span>
+                    <span className="block text-[9px] text-slate-500 mt-1">Quán đông: Cơm Niêu, Lẩu Bò</span>
                   </div>
 
                   <div className="p-2.5 rounded-2xl bg-brand-50/70 border border-brand-200">
                     <span className="text-[10px] text-brand-800 block font-semibold">Tối tan ca (Vàng)</span>
                     <strong className="text-xs sm:text-sm font-black text-brand-950">18h00 - 20h30</strong>
                     <span className="block text-[10px] text-brand-700 font-bold mt-0.5">96% lấp đầy 🔥</span>
+                    <span className="block text-[9px] text-brand-700 font-semibold mt-1">Quán đông: Haidilao, Gogi</span>
                   </div>
 
                   <div className="p-2.5 rounded-2xl bg-slate-100/70 border border-slate-200">
                     <span className="text-[10px] text-slate-600 block font-semibold">Khuya lai rai</span>
                     <strong className="text-xs sm:text-sm font-black text-slate-900">21h00 - 23h30</strong>
                     <span className="block text-[10px] text-slate-600 font-bold mt-0.5">74% lấp đầy</span>
+                    <span className="block text-[9px] text-slate-500 mt-1">Quán đông: Ốc Đào, K-Pub</span>
                   </div>
                 </div>
               </div>

@@ -11,12 +11,22 @@ import {
   Tag,
   TrendingUp,
   Users,
-  ShieldCheck
+  ShieldCheck,
+  Utensils,
+  ShieldAlert,
+  DollarSign
 } from 'lucide-react';
 import { User, AppNotification } from '../../types';
 import { storageService } from '../../services/storageService';
 
-export type AdminTab = 'admin_overview' | 'admin_restaurants' | 'admin_users' | 'admin_vouchers';
+export type AdminTab =
+  | 'admin_overview'
+  | 'admin_restaurants'
+  | 'admin_sessions'
+  | 'admin_users'
+  | 'admin_moderation'
+  | 'admin_vouchers'
+  | 'admin_finance';
 export type RestaurantTab = 'restaurant_reservations' | 'restaurant_menu' | 'restaurant_vouchers' | 'restaurant_stats';
 export type PortalTab = AdminTab | RestaurantTab;
 
@@ -44,8 +54,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const allUsers = storageService.getUsers();
   const allRestaurants = storageService.getRestaurants();
 
-  // Pending restaurants count for Admin badge
+  // Pending restaurants & reports count for Admin badge
   const pendingRestaurantsCount = allRestaurants.filter((r) => r.status === 'PENDING').length;
+  const pendingReportsCount = storageService.getReports().filter((r) => r.status === 'PENDING').length;
 
   // Filter only Admin and Restaurant users for the quick switcher
   const portalUsers = allUsers.filter((u) => u.role === 'admin' || u.role === 'restaurant');
@@ -108,60 +119,101 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Navigation Links for Admin or Restaurant */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-1">
             {isAdmin ? (
               <>
                 <button
                   onClick={() => setActiveTab('admin_overview')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-2 rounded-xl font-semibold text-xs transition-all ${
                     activeTab === 'admin_overview'
                       ? 'bg-brand-50 text-brand-600 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Tổng Quan Hệ Thống</span>
+                  <span>Tổng Quan</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('admin_restaurants')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-2 rounded-xl font-semibold text-xs transition-all ${
                     activeTab === 'admin_restaurants'
                       ? 'bg-brand-50 text-brand-600 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <Store className="w-3.5 h-3.5" />
-                  <span>Quản Lý Nhà Hàng</span>
+                  <span>Quán Ăn</span>
                   {pendingRestaurantsCount > 0 && (
                     <span className="px-1.5 py-0.2 text-[9px] bg-amber-500 text-white rounded-full font-bold animate-pulse">
-                      {pendingRestaurantsCount} mới
+                      {pendingRestaurantsCount}
                     </span>
                   )}
                 </button>
 
                 <button
+                  onClick={() => setActiveTab('admin_sessions')}
+                  className={`flex items-center gap-1 px-2.5 py-2 rounded-xl font-semibold text-xs transition-all ${
+                    activeTab === 'admin_sessions'
+                      ? 'bg-brand-50 text-brand-600 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <Utensils className="w-3.5 h-3.5" />
+                  <span>Bàn Ghép</span>
+                </button>
+
+                <button
                   onClick={() => setActiveTab('admin_users')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-2 rounded-xl font-semibold text-xs transition-all ${
                     activeTab === 'admin_users'
                       ? 'bg-brand-50 text-brand-600 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span>Thành Viên & Điểm Uy Tín</span>
+                  <span>Thành Viên</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('admin_moderation')}
+                  className={`flex items-center gap-1 px-2.5 py-2 rounded-xl font-semibold text-xs transition-all ${
+                    activeTab === 'admin_moderation'
+                      ? 'bg-rose-50 text-rose-600 font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-rose-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Khiếu Nại</span>
+                  {pendingReportsCount > 0 && (
+                    <span className="px-1.5 py-0.2 text-[9px] bg-rose-500 text-white rounded-full font-bold animate-bounce">
+                      {pendingReportsCount}
+                    </span>
+                  )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab('admin_vouchers')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-2 rounded-xl font-semibold text-xs transition-all ${
                     activeTab === 'admin_vouchers'
                       ? 'bg-brand-50 text-brand-600 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <Tag className="w-3.5 h-3.5" />
-                  <span>Voucher Toàn Sàn</span>
+                  <span>Voucher Sàn</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('admin_finance')}
+                  className={`flex items-center gap-1 px-2.5 py-2 rounded-xl font-semibold text-xs transition-all ${
+                    activeTab === 'admin_finance'
+                      ? 'bg-emerald-50 text-emerald-700 font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Tài Chính</span>
                 </button>
               </>
             ) : (
@@ -362,31 +414,52 @@ export const Navbar: React.FC<NavbarProps> = ({
           <>
             <button
               onClick={() => setActiveTab('admin_overview')}
-              className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'admin_overview' ? 'text-brand-600 font-bold' : ''}`}
+              className={`flex flex-col items-center gap-1 p-1 min-w-12 ${activeTab === 'admin_overview' ? 'text-brand-600 font-bold' : ''}`}
             >
               <TrendingUp className="w-4 h-4" />
               <span>Tổng Quan</span>
             </button>
             <button
               onClick={() => setActiveTab('admin_restaurants')}
-              className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'admin_restaurants' ? 'text-brand-600 font-bold' : ''}`}
+              className={`flex flex-col items-center gap-1 p-1 min-w-12 ${activeTab === 'admin_restaurants' ? 'text-brand-600 font-bold' : ''}`}
             >
               <Store className="w-4 h-4" />
-              <span>Nhà Hàng</span>
+              <span>Quán Ăn</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('admin_sessions')}
+              className={`flex flex-col items-center gap-1 p-1 min-w-12 ${activeTab === 'admin_sessions' ? 'text-brand-600 font-bold' : ''}`}
+            >
+              <Utensils className="w-4 h-4" />
+              <span>Bàn Ghép</span>
             </button>
             <button
               onClick={() => setActiveTab('admin_users')}
-              className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'admin_users' ? 'text-brand-600 font-bold' : ''}`}
+              className={`flex flex-col items-center gap-1 p-1 min-w-12 ${activeTab === 'admin_users' ? 'text-brand-600 font-bold' : ''}`}
             >
               <Users className="w-4 h-4" />
               <span>Thành Viên</span>
             </button>
             <button
+              onClick={() => setActiveTab('admin_moderation')}
+              className={`flex flex-col items-center gap-1 p-1 min-w-12 ${activeTab === 'admin_moderation' ? 'text-rose-600 font-bold' : ''}`}
+            >
+              <ShieldAlert className="w-4 h-4" />
+              <span>Khiếu Nại</span>
+            </button>
+            <button
               onClick={() => setActiveTab('admin_vouchers')}
-              className={`flex flex-col items-center gap-1 p-1 min-w-14 ${activeTab === 'admin_vouchers' ? 'text-brand-600 font-bold' : ''}`}
+              className={`flex flex-col items-center gap-1 p-1 min-w-12 ${activeTab === 'admin_vouchers' ? 'text-brand-600 font-bold' : ''}`}
             >
               <Tag className="w-4 h-4" />
               <span>Voucher</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('admin_finance')}
+              className={`flex flex-col items-center gap-1 p-1 min-w-12 ${activeTab === 'admin_finance' ? 'text-emerald-700 font-bold' : ''}`}
+            >
+              <DollarSign className="w-4 h-4" />
+              <span>Tài Chính</span>
             </button>
           </>
         ) : (

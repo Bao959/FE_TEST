@@ -1,4 +1,4 @@
-import { User, Restaurant, MenuItem, GroupVoucher, DiningSession, UserPost, AppNotification, FutureDiningPost } from '../types';
+import { User, Restaurant, MenuItem, GroupVoucher, DiningSession, UserPost, AppNotification, FutureDiningPost, DiningReport, PlatformCampaign, FinancialPayout } from '../types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -230,7 +230,12 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     description: 'Thương hiệu lẩu nổi tiếng thế giới với dịch vụ đỉnh cao, múa mì nghệ thuật và đa dạng loại nước lẩu.',
     status: 'ACTIVE',
     joinedDate: '10/01/2026',
-    totalOrdersServed: 342
+    totalOrdersServed: 342,
+    commissionRate: 10,
+    badge: 'DIAMOND',
+    capacity: 180,
+    featuredDishes: ['Lẩu Cà Chua & Lẩu Nấm', 'Thịt Bò Wagyu A5', 'Múa Mì Kéo Tay', 'Tôm Viên Phô Mai'],
+    monthlyRevenue: 85400000
   },
   {
     id: 'rest_2',
@@ -250,7 +255,12 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     description: 'Thịt bò Mỹ hảo hạng nướng trên than hồng, kèm các món panchan không giới hạn đúng điệu Seoul.',
     status: 'ACTIVE',
     joinedDate: '18/02/2026',
-    totalOrdersServed: 215
+    totalOrdersServed: 215,
+    commissionRate: 10,
+    badge: 'GOLD',
+    capacity: 120,
+    featuredDishes: ['Dẻ Sườn Bò Mỹ Nướng', 'Ba Chỉ Heo Iberico Sốt Cay', 'Canh Kim Chi Hàn Quốc'],
+    monthlyRevenue: 54200000
   },
   {
     id: 'rest_3',
@@ -270,7 +280,12 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     description: 'Hải sản ốc tươi sống đa dạng, sốt trứng muối hoàng kim và sốt me cay đặc trưng Sài Gòn.',
     status: 'PENDING',
     joinedDate: '16/10/2026',
-    totalOrdersServed: 0
+    totalOrdersServed: 0,
+    commissionRate: 8,
+    badge: 'VERIFIED',
+    capacity: 80,
+    featuredDishes: ['Ốc Hương Xào Bơ Tỏi', 'Càng Ghẹ Rang Muối Kéo Chỉ', 'Nghêu Hấp Sả Ớt'],
+    monthlyRevenue: 28600000
   },
   {
     id: 'rest_4',
@@ -743,6 +758,136 @@ export const INITIAL_FUTURE_POSTS: FutureDiningPost[] = [
     budgetPerPerson: 'Dưới 100.000đ',
     description: 'Lên kèo đi ăn sủi cảo Hà Tôn Quyền, phá lấu, chè mè đen khu người Hoa. Đi đông thử được nhiều món lặt vặt hơn nha!',
     createdAt: 'Hôm nay'
+  }
+];
+
+export const INITIAL_REPORTS: DiningReport[] = [
+  {
+    id: 'rep_1',
+    reporterName: 'Trần Thảo Mai',
+    reporterAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    reportedUserName: 'Đặng Minh Anh',
+    sessionId: 'session_1',
+    reason: 'Bùng hẹn không đến vào giờ chót',
+    detail: 'Nhóm đã chốt bàn Haidilao Bitexco 4 người lúc 19:00. Bạn Anh xác nhận sẵn sàng nhưng sát giờ hẹn 10 phút hủy không lý do, khiến nhóm bị hụt chỉ tiêu voucher nhóm.',
+    severity: 'HIGH',
+    status: 'PENDING',
+    createdAt: '15 phút trước'
+  },
+  {
+    id: 'rep_2',
+    reporterName: 'Nguyễn Hoàng Tuấn',
+    reporterAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    reportedRestaurantName: 'Tiệm Lẩu Bò Nhà Gỗ',
+    sessionId: 'session_2',
+    reason: 'Thời gian lên món chậm hơn cam kết',
+    detail: 'Nhóm đặt bàn trước 1 ngày nhưng khi đến quán phải chờ 35 phút mới có nồi lẩu. Quán giải thích do đông khách giờ cao điểm.',
+    severity: 'MEDIUM',
+    status: 'RESOLVED',
+    penaltyApplied: 'Đã đền bù voucher 50.000đ cho mỗi thành viên trong bàn',
+    createdAt: 'Hôm qua'
+  },
+  {
+    id: 'rep_3',
+    reporterName: 'Lê Quốc Bảo',
+    reporterAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
+    reportedUserName: 'Phạm Đức Trọng',
+    reason: 'Thái độ thiếu hòa nhã khi chia tiền bill',
+    detail: 'Khi thanh toán chia bill nhóm nướng Gogi, bạn Trọng thắc mắc tiền thuế VAT hơi gắt và nói lời thiếu tôn trọng bạn gom bàn.',
+    severity: 'LOW',
+    status: 'DISMISSED',
+    penaltyApplied: 'Đã nhắc nhở quy tắc ứng xử văn minh Chạm Đũa',
+    createdAt: '2 ngày trước'
+  }
+];
+
+export const INITIAL_CAMPAIGNS: PlatformCampaign[] = [
+  {
+    id: 'camp_1',
+    code: 'CHAMDUA50K',
+    title: 'Trợ Giá Bàn Lẩu & Nướng Đầu Tuần',
+    discount: 'Giảm 50.000đ',
+    minGroup: 4,
+    budget: 20000000,
+    usedCount: 168,
+    status: 'ACTIVE',
+    expiry: '31/12/2026',
+    targetCategory: 'Lẩu & Nướng Than Hoa'
+  },
+  {
+    id: 'camp_2',
+    code: 'DAITIECBBQ',
+    title: 'Đại Tiệc Buffet Nướng Nhóm 6 Người',
+    discount: 'Giảm 120.000đ',
+    minGroup: 6,
+    budget: 35000000,
+    usedCount: 242,
+    status: 'ACTIVE',
+    expiry: '15/12/2026',
+    targetCategory: 'Nướng BBQ Hàn Quốc'
+  },
+  {
+    id: 'camp_3',
+    code: 'OCSAIGON30K',
+    title: 'Ốc Đêm Lai Rai Sài Gòn',
+    discount: 'Giảm 30.000đ',
+    minGroup: 3,
+    budget: 15000000,
+    usedCount: 89,
+    status: 'ACTIVE',
+    expiry: '30/11/2026',
+    targetCategory: 'Ốc & Hải Sản'
+  },
+  {
+    id: 'camp_4',
+    code: 'NEWFRIEND20K',
+    title: 'Chào Bạn Mới Chạm Đũa Ghép Bàn Lần Đầu',
+    discount: 'Giảm 20.000đ/người',
+    minGroup: 2,
+    budget: 10000000,
+    usedCount: 310,
+    status: 'ACTIVE',
+    expiry: '31/12/2026',
+    targetCategory: 'Tất cả'
+  }
+];
+
+export const INITIAL_PAYOUTS: FinancialPayout[] = [
+  {
+    id: 'pay_1',
+    restaurantId: 'rest_1',
+    restaurantName: 'Haidilao Hotpot - Bitexco',
+    period: 'Kỳ 01 - Tháng 10/2026',
+    totalGMV: 85400000,
+    commissionRate: 10,
+    commissionFee: 8540000,
+    netPayout: 76860000,
+    status: 'PAID',
+    payoutDate: '15/10/2026'
+  },
+  {
+    id: 'pay_2',
+    restaurantId: 'rest_2',
+    restaurantName: 'Gogi House - Quán Thịt Nướng Hàn Quốc',
+    period: 'Kỳ 01 - Tháng 10/2026',
+    totalGMV: 54200000,
+    commissionRate: 10,
+    commissionFee: 5420000,
+    netPayout: 48780000,
+    status: 'PAID',
+    payoutDate: '15/10/2026'
+  },
+  {
+    id: 'pay_3',
+    restaurantId: 'rest_4',
+    restaurantName: 'Tiệm Lẩu Bò Nhà Gỗ Sài Gòn',
+    period: 'Kỳ 02 - Tháng 10/2026 (Đang đối soát)',
+    totalGMV: 18600000,
+    commissionRate: 8,
+    commissionFee: 1488000,
+    netPayout: 17112000,
+    status: 'PENDING',
+    payoutDate: '31/10/2026'
   }
 ];
 

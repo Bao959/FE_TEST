@@ -37,6 +37,8 @@ export interface User {
 
   // First-login Onboarding tour flag
   hasCompletedOnboardingTour?: boolean;
+  isLocked?: boolean;
+  warningCount?: number;
 }
 
 export interface MenuItem {
@@ -82,6 +84,11 @@ export interface Restaurant {
   status?: 'ACTIVE' | 'PENDING' | 'LOCKED';
   joinedDate?: string;
   totalOrdersServed?: number;
+  commissionRate?: number; // e.g. 10 (%)
+  badge?: 'MICHELIN' | 'DIAMOND' | 'GOLD' | 'VERIFIED';
+  capacity?: number;
+  featuredDishes?: string[];
+  monthlyRevenue?: number;
 }
 
 export interface ChatMessage {
@@ -209,5 +216,46 @@ export interface FutureDiningPost {
   budgetPerPerson: string;
   description: string;
   createdAt: string;
+}
+
+export interface DiningReport {
+  id: string;
+  reporterName: string;
+  reporterAvatar?: string;
+  reportedUserName?: string;
+  reportedRestaurantName?: string;
+  sessionId?: string;
+  reason: string;
+  detail: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH';
+  status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
+  penaltyApplied?: string;
+  createdAt: string;
+}
+
+export interface PlatformCampaign {
+  id: string;
+  code: string;
+  title: string;
+  discount: string;
+  minGroup: number;
+  budget: number;
+  usedCount: number;
+  status: 'ACTIVE' | 'PAUSED' | 'EXPIRED';
+  expiry: string;
+  targetCategory?: string;
+}
+
+export interface FinancialPayout {
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  period: string;
+  totalGMV: number;
+  commissionRate: number;
+  commissionFee: number;
+  netPayout: number;
+  status: 'PAID' | 'PENDING' | 'PROCESSING';
+  payoutDate: string;
 }
 

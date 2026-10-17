@@ -74,16 +74,25 @@ export function App() {
             activeSection={
               activeTab === 'admin_restaurants'
                 ? 'restaurants'
+                : activeTab === 'admin_sessions'
+                ? 'sessions'
                 : activeTab === 'admin_users'
                 ? 'users'
+                : activeTab === 'admin_moderation'
+                ? 'moderation'
                 : activeTab === 'admin_vouchers'
                 ? 'vouchers'
+                : activeTab === 'admin_finance'
+                ? 'finance'
                 : 'overview'
             }
             onSectionChange={(sec) => {
               if (sec === 'restaurants') setActiveTab('admin_restaurants');
+              else if (sec === 'sessions') setActiveTab('admin_sessions');
               else if (sec === 'users') setActiveTab('admin_users');
+              else if (sec === 'moderation') setActiveTab('admin_moderation');
               else if (sec === 'vouchers') setActiveTab('admin_vouchers');
+              else if (sec === 'finance') setActiveTab('admin_finance');
               else setActiveTab('admin_overview');
             }}
           />

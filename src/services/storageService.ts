@@ -6,7 +6,11 @@ import {
   DiningSession,
   UserPost,
   AppNotification,
-  ChatMessage
+  ChatMessage,
+  FutureDiningPost,
+  DiningReport,
+  PlatformCampaign,
+  FinancialPayout
 } from '../types';
 import {
   INITIAL_USERS,
@@ -16,9 +20,11 @@ import {
   INITIAL_DINING_SESSIONS,
   INITIAL_POSTS,
   INITIAL_NOTIFICATIONS,
-  INITIAL_FUTURE_POSTS
+  INITIAL_FUTURE_POSTS,
+  INITIAL_REPORTS,
+  INITIAL_CAMPAIGNS,
+  INITIAL_PAYOUTS
 } from '../mock/seedData';
-import { FutureDiningPost } from '../types';
 
 const STORAGE_KEYS = {
   USERS: 'dinetogether_users_v1',
@@ -29,7 +35,10 @@ const STORAGE_KEYS = {
   POSTS: 'dinetogether_posts_v1',
   NOTIFICATIONS: 'dinetogether_notifications_v1',
   CURRENT_USER_ID: 'dinetogether_current_user_id_v1',
-  FUTURE_POSTS: 'dinetogether_future_posts_v1'
+  FUTURE_POSTS: 'dinetogether_future_posts_v1',
+  REPORTS: 'chamdua_reports_v1',
+  CAMPAIGNS: 'chamdua_campaigns_v1',
+  PAYOUTS: 'chamdua_payouts_v1'
 };
 
 class StorageService {
@@ -47,7 +56,14 @@ class StorageService {
       localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(INITIAL_POSTS));
       localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
       localStorage.setItem(STORAGE_KEYS.FUTURE_POSTS, JSON.stringify(INITIAL_FUTURE_POSTS));
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, 'user_1'); // Default user: Nguyễn Hoàng Tuấn
+      localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(INITIAL_REPORTS));
+      localStorage.setItem(STORAGE_KEYS.CAMPAIGNS, JSON.stringify(INITIAL_CAMPAIGNS));
+      localStorage.setItem(STORAGE_KEYS.PAYOUTS, JSON.stringify(INITIAL_PAYOUTS));
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, 'user_admin'); // Default admin
+    } else {
+      if (!localStorage.getItem(STORAGE_KEYS.REPORTS)) localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(INITIAL_REPORTS));
+      if (!localStorage.getItem(STORAGE_KEYS.CAMPAIGNS)) localStorage.setItem(STORAGE_KEYS.CAMPAIGNS, JSON.stringify(INITIAL_CAMPAIGNS));
+      if (!localStorage.getItem(STORAGE_KEYS.PAYOUTS)) localStorage.setItem(STORAGE_KEYS.PAYOUTS, JSON.stringify(INITIAL_PAYOUTS));
     }
   }
 
@@ -941,6 +957,85 @@ class StorageService {
 
     target.joinedUsers = target.joinedUsers.filter((u) => u.userId !== userId);
     localStorage.setItem(STORAGE_KEYS.FUTURE_POSTS, JSON.stringify(posts));
+  }
+
+  // Reports & Moderation
+  public getReports(): DiningReport[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.REPORTS);
+    return raw ? JSON.parse(raw) : INITIAL_REPORTS;
+  }
+
+  public updateReportStatus(reportId: string, status: 'RESOLVED' | 'DISMISSED', penaltyApplied?: string): void {
+    const reports = this.getReports().map((r) =>
+      r.id === reportId ? { ...r, status, penaltyApplied: penaltyApplied || r.penaltyApplied } : r
+    );
+    localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
+  }
+
+  // Platform Campaigns
+  public getCampaigns(): PlatformCampaign[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.CAMPAIGNS);
+    return raw ? JSON.parse(raw) : INITIAL_CAMPAIGNS;
+  }
+
+  public toggleCampaignStatus(campId: string): void {
+    const camps = this.getCampaigns().map((c) =>
+      c.id === campId ? { ...c, status: c.status === 'ACTIVE' ? ('PAUSED' as const) : ('ACTIVE' as const) } : c
+    );
+    localStorage.setItem(STORAGE_KEYS.CAMPAIGNS, JSON.stringify(camps));
+  }
+
+  public addCampaign(campData: Partial<PlatformCampaign>): PlatformCampaign {
+    const camps = this.getCampaigns();
+    const newCamp: PlatformCampaign = {
+      id: `camp_${Date.now()}`,
+      code: campData.code?.toUpperCase() || `PROMO${Date.now().toString().slice(-4)}`,
+      title: campData.title || 'Ưu Đãi Đặc Biệt Chạm Đũa',
+      discount: campData.discount || 'Giảm 50.000đ',
+      minGroup: campData.minGroup || 4,
+      budget: campData.budget || 10000000,
+      usedCount: 0,
+      status: 'ACTIVE',
+      expiry: campData.expiry || '31/12/2026',
+      targetCategory: campData.targetCategory || 'Tất cả'
+    };
+    camps.unshift(newCamp);
+    localStorage.setItem(STORAGE_KEYS.CAMPAIGNS, JSON.stringify(camps));
+    return newCamp;
+  }
+
+  // Payouts
+  public getPayouts(): FinancialPayout[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.PAYOUTS);
+    return raw ? JSON.parse(raw) : INITIAL_PAYOUTS;
+  }
+
+  public updatePayoutStatus(payoutId: string, status: 'PAID' | 'PENDING' | 'PROCESSING'): void {
+    const payouts = this.getPayouts().map((p) => (p.id === payoutId ? { ...p, status } : p));
+    localStorage.setItem(STORAGE_KEYS.PAYOUTS, JSON.stringify(payouts));
+  }
+
+  // Restaurant Admin controls
+  public updateRestaurantCommission(restId: string, rate: number): void {
+    const rests = this.getRestaurants().map((r) => (r.id === restId ? { ...r, commissionRate: rate } : r));
+    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(rests));
+  }
+
+  public updateRestaurantBadge(restId: string, badge?: 'MICHELIN' | 'DIAMOND' | 'GOLD' | 'VERIFIED'): void {
+    const rests = this.getRestaurants().map((r) => (r.id === restId ? { ...r, badge } : r));
+    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(rests));
+  }
+
+  // User Admin controls
+  public toggleUserLock(userId: string): void {
+    const users = this.getUsers().map((u) => (u.id === userId ? { ...u, isLocked: !u.isLocked } : u));
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  }
+
+  // Session Admin controls
+  public cancelDiningSessionByAdmin(sessionId: string): void {
+    const sessions = this.getSessions().map((s) => (s.id === sessionId ? { ...s, status: 'CANCELLED' as const } : s));
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
   }
 }
 

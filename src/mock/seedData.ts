@@ -181,6 +181,33 @@ export const INITIAL_USERS: User[] = [
       lng: 106.7032,
       address: 'Nguyễn Huệ, Quận 1'
     }
+  },
+  {
+    id: 'user_admin',
+    name: 'Admin Tổng - Ban Quản Trị Chạm Đũa',
+    email: 'admin@chamdua.vn',
+    phone: '0988 999 888',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    role: 'admin',
+    bio: 'Quản trị viên cấp cao phụ trách vận hành và đối tác hệ sinh thái Chạm Đũa.',
+    foodPreferences: ['Lẩu & Nướng Than Hoa', 'Ẩm Thực Việt Nam'],
+    favoriteBudget: 'Trên 350.000đ / người',
+    profileCompletionPercent: 100,
+    isProfileCompleted: true,
+    isEmailVerified: true,
+    isPhoneVerified: true,
+    occupation: 'Trưởng ban Quản trị Hệ thống Chạm Đũa',
+    companyOrSchool: 'Chạm Đũa Tech JSC',
+    smartTags: ['Quản trị viên', 'Duyệt đối tác', 'Hỗ trợ nhà hàng'],
+    hasCompletedOnboardingTour: true,
+    friends: [],
+    trustScore: 5.0,
+    totalMealsJoined: 120,
+    location: {
+      lat: 10.7769,
+      lng: 106.7009,
+      address: 'Văn phòng Chạm Đũa, Quận 1, TP. Hồ Chí Minh'
+    }
   }
 ];
 
@@ -200,7 +227,10 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     phone: '028 2253 9156',
     openHours: '10:00 - 02:00',
     activeDealsCount: 2,
-    description: 'Thương hiệu lẩu nổi tiếng thế giới với dịch vụ đỉnh cao, múa mì nghệ thuật và đa dạng loại nước lẩu.'
+    description: 'Thương hiệu lẩu nổi tiếng thế giới với dịch vụ đỉnh cao, múa mì nghệ thuật và đa dạng loại nước lẩu.',
+    status: 'ACTIVE',
+    joinedDate: '10/01/2026',
+    totalOrdersServed: 342
   },
   {
     id: 'rest_2',
@@ -217,7 +247,10 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     phone: '028 7300 7338',
     openHours: '10:30 - 22:00',
     activeDealsCount: 1,
-    description: 'Thịt bò Mỹ hảo hạng nướng trên than hồng, kèm các món panchan không giới hạn đúng điệu Seoul.'
+    description: 'Thịt bò Mỹ hảo hạng nướng trên than hồng, kèm các món panchan không giới hạn đúng điệu Seoul.',
+    status: 'ACTIVE',
+    joinedDate: '18/02/2026',
+    totalOrdersServed: 215
   },
   {
     id: 'rest_3',
@@ -230,11 +263,14 @@ export const INITIAL_RESTAURANTS: Restaurant[] = [
     reviewCount: 650,
     priceRange: '100.000đ - 180.000đ/người',
     coverImage: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=800&auto=format&fit=crop&q=80',
-    isRegisteredOnSystem: false, // Quán vỉa hè / gia đình chưa đăng ký tài khoản
-    phone: '090 943 7033',
-    openHours: '11:00 - 22:30',
+    isRegisteredOnSystem: true,
+    phone: '0909 234 567',
+    openHours: '11:00 - 23:00',
     activeDealsCount: 1,
-    description: 'Địa chỉ ăn ốc trứ danh của dân Sài Gòn. Sốt me, sốt bơ tỏi thần thánh chấm bánh mì giòn rụm.'
+    description: 'Hải sản ốc tươi sống đa dạng, sốt trứng muối hoàng kim và sốt me cay đặc trưng Sài Gòn.',
+    status: 'PENDING',
+    joinedDate: '16/10/2026',
+    totalOrdersServed: 0
   },
   {
     id: 'rest_4',

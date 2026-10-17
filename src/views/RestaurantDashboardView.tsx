@@ -22,10 +22,14 @@ import { formatCurrency } from '../utils/geo';
 
 interface RestaurantDashboardViewProps {
   currentUser: User;
+  activeSection?: 'reservations' | 'menu' | 'promotions' | 'stats';
+  onSectionChange?: (sec: 'reservations' | 'menu' | 'promotions' | 'stats') => void;
 }
 
 export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = ({
-  currentUser
+  currentUser,
+  activeSection,
+  onSectionChange
 }) => {
   const allRestaurants = storageService.getRestaurants().filter((r) => r.isRegisteredOnSystem);
   
@@ -34,7 +38,13 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
     currentUser.restaurantId || allRestaurants[0]?.id || 'rest_1'
   );
 
-  const [activeTab, setActiveTab] = useState<'reservations' | 'menu' | 'promotions'>('reservations');
+  const [internalTab, setInternalTab] = useState<'reservations' | 'menu' | 'promotions' | 'stats'>('reservations');
+  const activeTab = activeSection || internalTab;
+
+  const setActiveTab = (tab: 'reservations' | 'menu' | 'promotions' | 'stats') => {
+    setInternalTab(tab);
+    if (onSectionChange) onSectionChange(tab);
+  };
 
   const currentRestaurant = allRestaurants.find((r) => r.id === selectedRestId) || allRestaurants[0];
 
@@ -233,6 +243,18 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
         >
           <Tag className="w-4 h-4" />
           <span>Voucher & Khuyến Mãi Nhóm ({vouchers.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('stats')}
+          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${
+            activeTab === 'stats'
+              ? 'border-emerald-600 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Thống Kê Doanh Thu & Hiệu Quả</span>
         </button>
       </div>
 
@@ -656,6 +678,115 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: STATS / THỐNG KÊ DOANH THU & HIỆU QUẢ */}
+      {activeTab === 'stats' && (
+        <div className="space-y-6">
+          {/* Top KPI Cards for the Restaurant */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-xs font-semibold text-slate-500">Doanh Thu Gom Bàn Tháng Này</span>
+              <div className="text-2xl font-black text-slate-900 mt-1">28.450.000đ</div>
+              <div className="text-xs text-emerald-600 font-bold mt-1.5 flex items-center gap-1">
+                <span>↑ +22.4%</span>
+                <span className="text-slate-400 font-normal">so với tháng trước</span>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-xs font-semibold text-slate-500">Số Lượt Bàn Nhóm Phục Vụ</span>
+              <div className="text-2xl font-black text-slate-900 mt-1">42 bàn</div>
+              <div className="text-xs text-emerald-600 font-bold mt-1.5">
+                <span>100% khách đến đúng giờ hẹn</span>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-xs font-semibold text-slate-500">Quy Mô Nhóm Trung Bình</span>
+              <div className="text-2xl font-black text-slate-900 mt-1">4.2 người / bàn</div>
+              <div className="text-xs text-slate-500 font-medium mt-1.5">
+                Tối ưu công suất bàn lớn 4-6 chỗ
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-xs font-semibold text-slate-500">Đánh Giá Thực Khách</span>
+              <div className="text-2xl font-black text-amber-500 mt-1">★ {currentRestaurant.rating} / 5.0</div>
+              <div className="text-xs text-slate-500 font-medium mt-1.5">
+                Dựa trên {currentRestaurant.reviewCount} lượt đánh giá thực tế
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed Performance Breakdowns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Peak hours filling */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-slate-900 text-sm">Tỷ Lệ Lấp Đầy Giờ Vàng Nhờ Gom Khách</h4>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">Hiệu quả cao</span>
+              </div>
+              <div className="space-y-3 pt-2 text-xs">
+                <div>
+                  <div className="flex justify-between font-semibold mb-1">
+                    <span>Trưa văn phòng (11:30 - 13:30)</span>
+                    <span className="text-emerald-600 font-bold">88% lấp đầy</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                    <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: '88%' }}></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold mb-1">
+                    <span>Tối sau giờ làm (18:00 - 20:30)</span>
+                    <span className="text-emerald-600 font-bold">95% lấp đầy</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                    <div className="bg-emerald-600 h-2.5 rounded-full" style={{ width: '95%' }}></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold mb-1">
+                    <span>Khuya lai rai cuối tuần (21:00 - 23:00)</span>
+                    <span className="text-amber-600 font-bold">74% lấp đầy</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                    <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: '74%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Popular dishes in group orders */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-slate-900 text-sm">Món Ăn Được Các Nhóm Gom Gọi Nhiều Nhất</h4>
+                <span className="text-xs text-slate-400">30 ngày qua</span>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {menuItems.slice(0, 4).map((dish, idx) => (
+                  <div key={dish.id} className="py-2.5 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3">
+                      <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px]">
+                        #{idx + 1}
+                      </span>
+                      <div>
+                        <span className="font-bold text-slate-800">{dish.name}</span>
+                        <div className="text-[10px] text-slate-400">{dish.category}</div>
+                      </div>
+                    </div>
+                    <span className="font-extrabold text-emerald-600">
+                      {formatCurrency(dish.price)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

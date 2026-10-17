@@ -29,21 +29,59 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
   const [socialProvider, setSocialProvider] = useState<'google' | 'facebook' | null>(null);
   
   // Login states
-  const [loginEmail, setLoginEmail] = useState('tuan.nguyen@foodie.vn');
+  const [loginEmail, setLoginEmail] = useState('admin@chamdua.vn');
   const [loginPassword, setLoginPassword] = useState('123456');
 
-  // Register states
-  const [regFullName, setRegFullName] = useState('');
+  // Restaurant Partner Registration states
+  const [regRestName, setRegRestName] = useState('');
+  const [regManagerName, setRegManagerName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
+  const [regCategory, setRegCategory] = useState('Lẩu & Nướng Than Hoa');
+  const [regAddress, setRegAddress] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
-  const [regRole, setRegRole] = useState<'user' | 'restaurant'>('user');
 
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
 
   const allUsers = storageService.getUsers();
   const restaurants = storageService.getRestaurants();
+
+  // Highlighted Admin & Partner demo accounts
+  const demoAccounts = [
+    allUsers.find((u) => u.id === 'user_admin') || {
+      id: 'user_admin',
+      name: 'Admin Tổng Chạm Đũa',
+      email: 'admin@chamdua.vn',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      role: 'admin' as const,
+      bio: 'Quản trị viên cấp cao hệ thống Chạm Đũa'
+    },
+    allUsers.find((u) => u.id === 'user_rest_1') || {
+      id: 'user_rest_1',
+      name: 'Quản Lý Haidilao Bitexco',
+      email: 'manager@haidilao.vn',
+      avatar: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150&auto=format&fit=crop&q=80',
+      role: 'restaurant' as const,
+      bio: 'Đối tác Lẩu Trung Hoa chính thức'
+    },
+    allUsers.find((u) => u.id === 'user_rest_2') || {
+      id: 'user_rest_2',
+      name: 'Bếp Trưởng Gogi House',
+      email: 'gogi.saigon@redsun.vn',
+      avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150&auto=format&fit=crop&q=80',
+      role: 'restaurant' as const,
+      bio: 'Quán Nướng BBQ Hàn Quốc Nguyễn Huệ'
+    },
+    {
+      id: 'user_rest_3_demo',
+      name: 'Quán Ốc Đào Sài Gòn (Chờ duyệt)',
+      email: 'ocdao.q1@foodie.vn',
+      avatar: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=150&auto=format&fit=crop&q=80',
+      role: 'restaurant' as const,
+      bio: 'Quán mới đăng ký tham gia sàn'
+    }
+  ];
 
   // User simulated GPS (District 1, HCMC)
   const defaultLocation = {
@@ -52,27 +90,34 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
     address: 'Bến Nghé, Quận 1, TP. Hồ Chí Minh'
   };
 
-  const handleQuickLogin = (user: User) => {
-    storageService.setCurrentUserId(user.id);
-    onLoginSuccess(user);
+  const handleQuickLogin = (account: any) => {
+    const existing = allUsers.find((u) => u.id === account.id || u.email === account.email);
+    const chosen = existing || (account as User);
+    storageService.setCurrentUserId(chosen.id);
+    onLoginSuccess(chosen);
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const matched = allUsers.find((u) => u.email.toLowerCase() === loginEmail.toLowerCase());
-    const chosen = matched || allUsers[0];
+    const fallback = allUsers.find((u) => u.role === 'admin') || allUsers.find((u) => u.role === 'restaurant') || allUsers[0];
+    const chosen = matched || fallback;
     storageService.setCurrentUserId(chosen.id);
     onLoginSuccess(chosen);
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handlePartnerRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regFullName.trim()) {
-      alert('Vui lòng nhập họ và tên của bạn.');
+    if (!regRestName.trim()) {
+      alert('Vui lòng nhập tên nhà hàng / quán ăn.');
+      return;
+    }
+    if (!regManagerName.trim()) {
+      alert('Vui lòng nhập họ tên người đại diện.');
       return;
     }
     if (!regEmail.trim()) {
-      alert('Vui lòng nhập email.');
+      alert('Vui lòng nhập email liên hệ.');
       return;
     }
     if (regPassword && regPassword !== regConfirmPassword) {
@@ -80,24 +125,37 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
       return;
     }
 
-    // Create user initially (profile is not yet completed 80%)
-    const newUser = storageService.createUser({
-      name: regFullName.trim(),
-      email: regEmail.trim(),
-      phone: regPhone.trim(),
-      role: regRole,
-      bio: '',
-      foodPreferences: [],
-      favoriteBudget: '',
-      isProfileCompleted: false,
-      profileCompletionPercent: 30
+    // 1. Create Restaurant with PENDING status
+    const newRest = storageService.addRestaurant({
+      name: regRestName.trim(),
+      category: regCategory,
+      address: regAddress.trim() || 'Quận 1, TP. Hồ Chí Minh',
+      phone: regPhone.trim() || '028 3888 9999',
+      priceRange: '150.000đ - 300.000đ/người',
+      openHours: '10:00 - 22:30',
+      coverImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
+      isRegisteredOnSystem: true,
+      status: 'PENDING'
     });
 
-    storageService.setCurrentUserId(newUser.id);
-    
-    // User requested: "sau khi đăng ký mới vào mục hoàn thiện hồ sơ"
-    // Pass user to App.tsx which immediately renders ProfileCompletionModal
-    onLoginSuccess(newUser);
+    // 2. Create User account for this restaurant manager
+    const newManager = storageService.createUser({
+      name: regManagerName.trim(),
+      email: regEmail.trim(),
+      phone: regPhone.trim(),
+      role: 'restaurant',
+      restaurantId: newRest.id,
+      bio: `Đại diện nhà hàng ${newRest.name}`,
+      foodPreferences: [regCategory],
+      favoriteBudget: '150.000đ - 300.000đ/người',
+      isProfileCompleted: true,
+      profileCompletionPercent: 100,
+      hasCompletedOnboardingTour: true
+    });
+
+    storageService.setCurrentUserId(newManager.id);
+    alert(`🎉 Chúc mừng bạn đã đăng ký đối tác "${newRest.name}" thành công!\n\nHồ sơ đang ở trạng thái 'Chờ Ban Quản Trị Phê Duyệt'. Bạn có thể bắt đầu cài đặt thực đơn và voucher đón khách ngay bây giờ.`);
+    onLoginSuccess(newManager);
   };
 
   return (
@@ -106,91 +164,100 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
       {/* LEFT COLUMN: AUTH & VALUE PROPOSITIONS (50%) */}
       <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-10 lg:p-12 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white overflow-y-auto">
         <div>
-          {/* Brand Header - Chạm Đũa */}
+          {/* Brand Header - Chạm Đũa Portal */}
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30 text-2xl">
               🥢
             </div>
             <div>
-              <span className="text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
-                Chạm<span className="text-brand-500">Đũa</span>
-              </span>
-              <p className="text-xs text-amber-300 font-semibold">Chạm đũa kết thân • Ăn ngon chia sẻ</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
+                  Chạm<span className="text-brand-500">Đũa</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 text-[10px] font-extrabold uppercase tracking-wider">
+                  B2B Portal
+                </span>
+              </div>
+              <p className="text-xs text-amber-300 font-semibold">Cổng Quản Trị Hệ Thống & Đối Tác Nhà Hàng</p>
             </div>
           </div>
 
-          {/* Value Proposition Pills */}
+          {/* Value Proposition Pills for Admin & Restaurant */}
           <div className="mt-6 space-y-3">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              Ăn Ngon Hơn, Vui Hơn, <br className="hidden sm:inline" />
+              Tối Ưu Công Suất Bàn, <br className="hidden sm:inline" />
               <span className="bg-gradient-to-r from-brand-400 via-amber-300 to-amber-500 bg-clip-text text-transparent">
-                Tiết Kiệm Hơn Khi Đi Cùng Nhau
+                Gia Tăng Doanh Thu F&B Bền Vững
               </span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-lg leading-relaxed">
-              Bạn thèm ăn lẩu, nướng, ẩm thực đường phố nhưng ngại đi một mình? Chạm Đũa kết nối bạn với những người cùng gu ăn uống, cùng chia hóa đơn và mở khóa voucher nhóm hấp dẫn!
+              Nền tảng vận hành tập trung dành riêng cho Ban Quản Trị Chạm Đũa và các Quán Ăn / Nhà Hàng Đối Tác. Tiếp nhận nhóm khách gom văn minh, quản lý bàn trống thời gian thực và quản trị hệ sinh thái ẩm thực thông minh.
             </p>
 
             {/* Core Values Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
               <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
-                <Smile className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span>Tạo niềm vui mới</span>
-              </div>
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
-                <Utensils className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
-                <span>Thử nhiều món ngon</span>
-              </div>
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
-                <DollarSign className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Chia nhỏ hóa đơn</span>
-              </div>
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
-                <Tag className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
-                <span>Voucher nhóm khủng</span>
+                <Store className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span>Tăng doanh thu bàn trống</span>
               </div>
               <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
                 <Users className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
-                <span>Kết bạn bốn phương</span>
+                <span>Gom khách tự động</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
+                <DollarSign className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                <span>Báo cáo doanh số chi tiết</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
+                <Tag className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                <span>Voucher kích cầu linh hoạt</span>
               </div>
               <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
                 <ShieldCheck className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
-                <span>Cộng đồng uy tín</span>
+                <span>Kiểm duyệt & An toàn</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/70 border border-slate-700/60 text-xs text-slate-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" />
+                <span>Cộng đồng uy tín 5.0★</span>
               </div>
             </div>
           </div>
 
-          {/* Quick Demo Personas (1-Click Login) */}
+          {/* Quick Demo Personas (1-Click Login for Admin & Restaurant) */}
           <div className="mt-6 p-3.5 rounded-2xl bg-brand-950/40 border border-brand-800/50">
             <div className="flex items-center justify-between mb-2.5">
               <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" /> Trải nghiệm nhanh (1-Click Demo)
+                <Sparkles className="w-3.5 h-3.5" /> Trải nghiệm nhanh (1-Click Demo Portal)
               </span>
-              <span className="text-[11px] text-slate-400">Chọn vai để vào ngay:</span>
+              <span className="text-[11px] text-slate-400">Chọn vai để vào:</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {allUsers.slice(0, 4).map((u) => (
+              {demoAccounts.map((acc) => (
                 <button
-                  key={u.id}
-                  onClick={() => handleQuickLogin(u)}
+                  key={acc.id}
+                  onClick={() => handleQuickLogin(acc)}
                   className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/80 hover:bg-brand-600/30 hover:border-brand-500/50 border border-slate-700/50 text-left transition-all group"
                 >
-                  <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-full object-cover border border-slate-600" />
+                  <img src={acc.avatar} alt={acc.name} className="w-8 h-8 rounded-full object-cover border border-slate-600" />
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-white group-hover:text-brand-400 truncate flex items-center justify-between">
-                      <span>{u.name}</span>
-                      <span className="text-[9px] px-1 rounded bg-slate-700 text-slate-300">
-                        {u.role === 'restaurant' ? 'Quán' : 'Khách'}
+                      <span>{acc.name}</span>
+                      <span className={`text-[9px] px-1 rounded font-extrabold ${
+                        acc.role === 'admin'
+                          ? 'bg-amber-500 text-slate-950'
+                          : 'bg-emerald-600 text-white'
+                      }`}>
+                        {acc.role === 'admin' ? '👑 Admin' : '🏪 Quán'}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-400 truncate">{u.bio}</div>
+                    <div className="text-[10px] text-slate-400 truncate">{acc.bio}</div>
                   </div>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* AUTH SECTION WITH TWO TABS: ĐĂNG NHẬP & ĐĂNG KÝ */}
+          {/* AUTH SECTION WITH TWO TABS: ĐĂNG NHẬP & ĐĂNG KÝ ĐỐI TÁC */}
           <div className="mt-6 bg-slate-800/50 p-6 rounded-3xl border border-slate-700/50 backdrop-blur-sm shadow-xl">
             
             {/* TOGGLE TABS */}
@@ -205,7 +272,7 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
                 }`}
               >
                 <LogIn className="w-3.5 h-3.5" />
-                <span>Đăng Nhập</span>
+                <span>Đăng Nhập Quản Trị / Đối Tác</span>
               </button>
 
               <button
@@ -217,11 +284,8 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Đăng Ký Tài Khoản</span>
-                <span className="px-1.5 py-0.2 text-[9px] bg-red-500 text-white rounded-full font-extrabold">
-                  80% Profile
-                </span>
+                <Store className="w-3.5 h-3.5" />
+                <span>Đăng Ký Đối Tác Quán Ăn Mới</span>
               </button>
             </div>
 
@@ -229,11 +293,11 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
             {authTab === 'login' && (
               <form onSubmit={handleLoginSubmit} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Email tài khoản</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Email quản trị hoặc nhà hàng</label>
                   <input
                     type="email"
                     required
-                    placeholder="tuan.nguyen@foodie.vn"
+                    placeholder="admin@chamdua.vn hoặc manager@haidilao.vn"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-brand-500"
@@ -257,62 +321,72 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
                   className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold text-sm shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 mt-2"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>Đăng Nhập Vào Chạm Đũa</span>
+                  <span>Đăng Nhập Cổng Quản Trị / Đối Tác</span>
                 </button>
               </form>
             )}
 
-            {/* TAB 2: DEDICATED REGISTER FORM */}
+            {/* TAB 2: PARTNER REGISTRATION FORM */}
             {authTab === 'register' && (
-              <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+              <form onSubmit={handlePartnerRegisterSubmit} className="space-y-3.5">
                 
-                {/* Role selection */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRegRole('user')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
-                      regRole === 'user'
-                        ? 'bg-brand-500/20 border-brand-500 text-brand-300 ring-1 ring-brand-400'
-                        : 'bg-slate-900/60 border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    <UserIcon className="w-3.5 h-3.5" />
-                    <span>Thực Khách (Ăn chung)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRegRole('restaurant')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
-                      regRole === 'restaurant'
-                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 ring-1 ring-emerald-400'
-                        : 'bg-slate-900/60 border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    <Store className="w-3.5 h-3.5" />
-                    <span>Chủ Quán / Nhà Hàng</span>
-                  </button>
+                <div className="p-3 rounded-xl bg-brand-500/10 border border-brand-500/30 text-[11px] text-amber-200 leading-relaxed flex items-start gap-2">
+                  <Store className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Hợp tác cùng Chạm Đũa:</strong> Đăng ký gian hàng nhà hàng của bạn để đón hàng ngàn nhóm khách gom mỗi ngày và lấp đầy bàn ăn vào các khung giờ vàng.
+                  </span>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Họ và tên của bạn *</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Tên nhà hàng / quán ăn *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ví dụ: Hoàng Minh Trí"
-                    value={regFullName}
-                    onChange={(e) => setRegFullName(e.target.value)}
+                    placeholder="Ví dụ: Lẩu Nấm Ashima Sài Gòn"
+                    value={regRestName}
+                    onChange={(e) => setRegRestName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-brand-500"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">Email đăng ký *</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Người đại diện / quản lý *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ví dụ: Nguyễn Văn Hùng"
+                      value={regManagerName}
+                      onChange={(e) => setRegManagerName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-brand-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Thể loại món ăn</label>
+                    <select
+                      value={regCategory}
+                      onChange={(e) => setRegCategory(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-brand-500 font-medium"
+                    >
+                      <option value="Lẩu & Nướng Than Hoa">Lẩu & Nướng Than Hoa</option>
+                      <option value="Lẩu Trung Hoa & Hồng Kông">Lẩu Trung Hoa & Hồng Kông</option>
+                      <option value="Ốc & Hải Sản Sài Gòn">Ốc & Hải Sản Sài Gòn</option>
+                      <option value="Món Nướng BBQ Hàn Quốc">Món Nướng BBQ Hàn Quốc</option>
+                      <option value="Ẩm Thực Nhật Bản (Sushi, Ramen)">Ẩm Thực Nhật Bản (Sushi, Ramen)</option>
+                      <option value="Cơm & Đặc Sản Việt Nam">Cơm & Đặc Sản Việt Nam</option>
+                      <option value="Quán Nhậu Lai Rai & Bia Craft">Quán Nhậu Lai Rai & Bia Craft</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Email quản lý *</label>
                     <input
                       type="email"
                       required
-                      placeholder="minhtri@email.com"
+                      placeholder="partner@ashima.vn"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-brand-500"
@@ -320,15 +394,28 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">Số điện thoại</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Hotline / SĐT quán *</label>
                     <input
                       type="tel"
-                      placeholder="0912 345 678"
+                      required
+                      placeholder="028 3822 8899"
                       value={regPhone}
                       onChange={(e) => setRegPhone(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-brand-500"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Địa chỉ quán kinh doanh *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: 35 Tú Xương, Phường Võ Thị Sáu, Quận 3, TP.HCM"
+                    value={regAddress}
+                    onChange={(e) => setRegAddress(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-brand-500"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -357,20 +444,12 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
                   </div>
                 </div>
 
-                {/* Notice on 80% completion */}
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200 leading-relaxed flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Quy định Chạm Đũa:</strong> Sau khi đăng ký, bạn cần hoàn thiện tối thiểu <strong>80% hồ sơ</strong> (chọn sở thích ẩm thực, thông tin cá nhân) để mở khóa quyền ghép bàn ăn.
-                  </span>
-                </div>
-
                 <button
                   type="submit"
                   className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95"
                 >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Đăng Ký & Tiếp Tục Hoàn Thiện Hồ Sơ (80%)</span>
+                  <Store className="w-4 h-4" />
+                  <span>Đăng Ký Đối Tác & Vào Trang Quản Trị Quán</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>

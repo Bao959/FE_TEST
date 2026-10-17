@@ -4,7 +4,7 @@ export interface User {
   email: string;
   phone?: string;
   avatar: string;
-  role: 'user' | 'restaurant';
+  role: 'admin' | 'restaurant' | 'user';
   restaurantId?: string;
   bio: string;
   foodPreferences: string[];
@@ -79,6 +79,9 @@ export interface Restaurant {
   openHours: string;
   activeDealsCount: number;
   description: string;
+  status?: 'ACTIVE' | 'PENDING' | 'LOCKED';
+  joinedDate?: string;
+  totalOrdersServed?: number;
 }
 
 export interface ChatMessage {

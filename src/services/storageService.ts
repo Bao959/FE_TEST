@@ -59,9 +59,13 @@ class StorageService {
   // Current Auth User
   public getCurrentUser(): User {
     const users = this.getUsers();
-    const currentId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID) || 'user_1';
+    const currentId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
     const found = users.find((u) => u.id === currentId);
-    return found || users[0];
+    if (found && (found.role === 'admin' || found.role === 'restaurant')) {
+      return found;
+    }
+    const adminOrRest = users.find((u) => u.role === 'admin') || users.find((u) => u.role === 'restaurant') || users[0];
+    return adminOrRest;
   }
 
   public setCurrentUserId(userId: string): void {
@@ -74,6 +78,12 @@ class StorageService {
     if (!raw) return INITIAL_USERS;
     try {
       const users: User[] = JSON.parse(raw);
+      // Ensure admin & restaurant seed accounts are present
+      INITIAL_USERS.forEach((initU) => {
+        if (!users.some((u) => u.id === initU.id)) {
+          users.push(initU);
+        }
+      });
       return users.map((u) => ({
         ...u,
         isProfileCompleted: u.isProfileCompleted !== undefined ? u.isProfileCompleted : true,
@@ -90,6 +100,11 @@ class StorageService {
 
   public updateUser(updatedUser: User): void {
     const users = this.getUsers().map((u) => (u.id === updatedUser.id ? updatedUser : u));
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  }
+
+  public updateUserTrustScore(userId: string, newScore: number): void {
+    const users = this.getUsers().map((u) => (u.id === userId ? { ...u, trustScore: Number(newScore.toFixed(1)) } : u));
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
   }
 
@@ -144,6 +159,43 @@ class StorageService {
 
   public updateRestaurant(restaurant: Restaurant): void {
     const list = this.getRestaurants().map((r) => (r.id === restaurant.id ? restaurant : r));
+    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(list));
+  }
+
+  public addRestaurant(restaurantData: Partial<Restaurant>): Restaurant {
+    const list = this.getRestaurants();
+    const newRest: Restaurant = {
+      id: `rest_${Date.now()}`,
+      name: restaurantData.name || 'Nhà hàng mới',
+      category: restaurantData.category || 'Ẩm thực Việt Nam',
+      address: restaurantData.address || 'Quận 1, TP.HCM',
+      lat: restaurantData.lat || 10.7769,
+      lng: restaurantData.lng || 106.7009,
+      rating: 5.0,
+      reviewCount: 1,
+      priceRange: restaurantData.priceRange || '150.000đ - 250.000đ/người',
+      coverImage: restaurantData.coverImage || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
+      isRegisteredOnSystem: true,
+      phone: restaurantData.phone || '0901 234 567',
+      openHours: restaurantData.openHours || '10:00 - 22:00',
+      activeDealsCount: 0,
+      description: restaurantData.description || 'Đối tác chính thức của hệ thống Chạm Đũa.',
+      status: restaurantData.status || 'ACTIVE',
+      joinedDate: new Date().toLocaleDateString('vi-VN'),
+      totalOrdersServed: 0
+    };
+    list.unshift(newRest);
+    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(list));
+    return newRest;
+  }
+
+  public updateRestaurantStatus(id: string, status: 'ACTIVE' | 'PENDING' | 'LOCKED'): void {
+    const list = this.getRestaurants().map((r) => (r.id === id ? { ...r, status } : r));
+    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(list));
+  }
+
+  public deleteRestaurant(id: string): void {
+    const list = this.getRestaurants().filter((r) => r.id !== id);
     localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(list));
   }
 

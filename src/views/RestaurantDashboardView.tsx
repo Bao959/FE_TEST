@@ -977,25 +977,34 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
               </div>
             </div>
 
-            {/* Interactive Daily Revenue & Booking Growth Chart */}
-            <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* MoMo-Style Curved Spline Growth Area Chart */}
+            <div className="bg-white p-6 sm:p-7 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-6 select-none">
+              
+              {/* Header: Title + MoMo Switchers & Legend */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-black text-base text-slate-900 tracking-tight">
-                      Biểu Đồ Doanh Thu & Số Lượng Bàn Ăn Theo Ngày
-                    </h4>
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 uppercase">
-                      Weekly Peak Trend
-                    </span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-amber-500 text-white shadow-md shadow-brand-500/25">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-black text-lg text-slate-900 tracking-tight">
+                          Biểu Đồ Tăng Trưởng Doanh Số Theo Ngày
+                        </h4>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200 uppercase tracking-wide">
+                          MoMo Growth Style
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Đường cong tăng trưởng doanh thu liên tục và đối chiếu so sánh cùng kỳ tuần trước
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Theo dõi điểm rơi doanh thu trong tuần: Thứ Sáu & Thứ Bảy là khung giờ bùng nổ nhóm ăn ghép
-                  </p>
                 </div>
 
                 {/* Metric toggle */}
-                <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
+                <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold self-start lg:self-center">
                   <button
                     onClick={() => setStatsMetric('revenue')}
                     className={`px-3 py-1.5 rounded-xl transition-all ${
@@ -1019,61 +1028,275 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
                 </div>
               </div>
 
-              {/* Bar Visual Chart */}
-              <div className="grid grid-cols-7 gap-2 sm:gap-4 pt-4">
-                {dailyStats.map((item, idx) => {
-                  const maxVal = statsMetric === 'revenue' ? 6000000 : 10;
-                  const currentVal = statsMetric === 'revenue' ? item.gmv : item.tables;
-                  const heightPercent = Math.round((currentVal / maxVal) * 100);
-                  const isPeak = idx === 5 || idx === 4; // T6 & T7
-                  const isHovered = statsHoveredDay === idx;
-
-                  return (
-                    <div
-                      key={item.day}
-                      onMouseEnter={() => setStatsHoveredDay(idx)}
-                      onMouseLeave={() => setStatsHoveredDay(null)}
-                      className={`group flex flex-col items-center justify-end p-2.5 rounded-2xl transition-all cursor-pointer ${
-                        isHovered
-                          ? 'bg-amber-50 ring-2 ring-brand-500'
-                          : isPeak
-                          ? 'bg-amber-50/50'
-                          : 'bg-slate-50 hover:bg-slate-100/80'
-                      }`}
-                    >
-                      {/* Value label */}
-                      <span className="text-[11px] font-black text-slate-800 mb-2 truncate">
-                        {statsMetric === 'revenue' ? `${(item.gmv / 1000000).toFixed(1)}Tr` : `${item.tables} bàn`}
-                      </span>
-
-                      {/* Bar Container */}
-                      <div className="w-full bg-slate-200/80 rounded-xl h-40 flex items-end p-1 overflow-hidden relative">
-                        <div
-                          className={`w-full rounded-lg transition-all duration-500 ${
-                            isPeak
-                              ? 'bg-gradient-to-t from-brand-600 via-amber-500 to-amber-400 shadow-md'
-                              : 'bg-gradient-to-t from-slate-600 to-slate-400 group-hover:from-brand-500 group-hover:to-amber-400'
-                          }`}
-                          style={{ height: `${heightPercent}%` }}
-                        />
-                      </div>
-
-                      {/* Day Label */}
-                      <span className="text-xs font-black text-slate-800 mt-2.5 block">{item.day}</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">{item.date}</span>
+              {/* MoMo Headline Growth Metric Card */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-white border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                    {statsHoveredDay !== null
+                      ? `${dailyStats[statsHoveredDay].day} (${dailyStats[statsHoveredDay].date})`
+                      : 'Tổng Doanh Thu Tuần Này (Gom Bàn F&B)'}
+                  </span>
+                  <div className="flex items-baseline gap-3 mt-0.5">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                      {statsHoveredDay !== null
+                        ? statsMetric === 'revenue'
+                          ? formatCurrency(dailyStats[statsHoveredDay].gmv)
+                          : `${dailyStats[statsHoveredDay].tables} bàn ghép`
+                        : statsMetric === 'revenue'
+                          ? '28.450.000 đ'
+                          : '42 bàn ghép'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black border border-emerald-200">
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                      {statsHoveredDay !== null && (statsHoveredDay === 5 || statsHoveredDay === 4)
+                        ? '+85.2% Kỷ Lục Cuối Tuần 🔥'
+                        : '+22.4% Tăng Trưởng'}
+                    </span>
+                  </div>
+                  {statsHoveredDay !== null && (
+                    <div className="text-[11px] text-slate-500 font-medium mt-1">
+                      Thực nhận về quán: <strong className="text-emerald-700 font-bold">{formatCurrency(dailyStats[statsHoveredDay].net)}</strong> &bull; Phục vụ {dailyStats[statsHoveredDay].guests} thực khách
                     </div>
-                  );
-                })}
+                  )}
+                </div>
+
+                {/* MoMo Legend */}
+                <div className="flex items-center gap-4 text-xs font-bold self-start sm:self-center">
+                  <span className="flex items-center gap-1.5 text-slate-800">
+                    <span className="w-3 h-3 rounded-full bg-gradient-to-tr from-brand-600 to-amber-500 shadow-xs" />
+                    Tuần Này (Thực tế)
+                  </span>
+                  <span className="flex items-center gap-1.5 text-slate-400">
+                    <span className="w-4 border-b-2 border-dashed border-slate-400" />
+                    Tuần Trước (Đối chiếu)
+                  </span>
+                </div>
               </div>
 
-              {/* Hover Highlight Banner */}
+              {/* SVG MoMo Smooth Wave Area Chart */}
+              {(() => {
+                const currentPoints = dailyStats.map((item, idx) => {
+                  const x = 60 + idx * 108;
+                  const y = statsMetric === 'revenue'
+                    ? 195 - (item.gmv / 6000000) * 160
+                    : 195 - (item.tables / 10) * 160;
+                  return { x, y, item, idx };
+                });
+
+                const lastWeekGmvData = [2200000, 2500000, 2900000, 3300000, 4200000, 4500000, 2800000];
+                const lastWeekTablesData = [3, 4, 4, 5, 6, 7, 4];
+                const lastWeekPoints = dailyStats.map((_, idx) => {
+                  const x = 60 + idx * 108;
+                  const y = statsMetric === 'revenue'
+                    ? 195 - (lastWeekGmvData[idx] / 6000000) * 160
+                    : 195 - (lastWeekTablesData[idx] / 10) * 160;
+                  return { x, y };
+                });
+
+                const buildSmoothPath = (pts: { x: number; y: number }[]) => {
+                  return pts.reduce((acc, curr, i, arr) => {
+                    if (i === 0) return `M ${curr.x},${curr.y}`;
+                    const prev = arr[i - 1];
+                    const cpX1 = prev.x + (curr.x - prev.x) / 2;
+                    const cpY1 = prev.y;
+                    const cpX2 = prev.x + (curr.x - prev.x) / 2;
+                    const cpY2 = curr.y;
+                    return `${acc} C ${cpX1},${cpY1} ${cpX2},${cpY2} ${curr.x},${curr.y}`;
+                  }, '');
+                };
+
+                const currentLinePath = buildSmoothPath(currentPoints);
+                const currentAreaPath = `${currentLinePath} L ${currentPoints[currentPoints.length - 1].x},195 L ${currentPoints[0].x},195 Z`;
+                const lastWeekLinePath = buildSmoothPath(lastWeekPoints);
+
+                return (
+                  <div className="relative pt-2 pb-2">
+                    <svg viewBox="0 0 760 220" className="w-full h-56 sm:h-64 overflow-visible select-none">
+                      <defs>
+                        {/* MoMo Translucent Glow Gradient for Area */}
+                        <linearGradient id="restMomoAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f97316" stopOpacity="0.45" />
+                          <stop offset="50%" stopColor="#f97316" stopOpacity="0.15" />
+                          <stop offset="100%" stopColor="#f97316" stopOpacity="0.0" />
+                        </linearGradient>
+
+                        {/* MoMo Vibrant Line Gradient */}
+                        <linearGradient id="restMomoLineGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#f59e0b" />
+                          <stop offset="70%" stopColor="#ea580c" />
+                          <stop offset="100%" stopColor="#f97316" />
+                        </linearGradient>
+
+                        {/* Drop Shadow Glow Filter */}
+                        <filter id="restMomoGlow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#ea580c" floodOpacity="0.3" />
+                        </filter>
+                      </defs>
+
+                      {/* Horizontal reference guide lines */}
+                      <g className="opacity-30">
+                        <line x1="40" y1="35" x2="720" y2="35" stroke="#94a3b8" strokeDasharray="4 4" />
+                        <text x="35" y="39" textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="bold">
+                          {statsMetric === 'revenue' ? '6.0M' : '10'}
+                        </text>
+
+                        <line x1="40" y1="75" x2="720" y2="75" stroke="#94a3b8" strokeDasharray="4 4" />
+                        <text x="35" y="79" textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="bold">
+                          {statsMetric === 'revenue' ? '4.5M' : '7.5'}
+                        </text>
+
+                        <line x1="40" y1="115" x2="720" y2="115" stroke="#94a3b8" strokeDasharray="4 4" />
+                        <text x="35" y="119" textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="bold">
+                          {statsMetric === 'revenue' ? '3.0M' : '5.0'}
+                        </text>
+
+                        <line x1="40" y1="155" x2="720" y2="155" stroke="#94a3b8" strokeDasharray="4 4" />
+                        <text x="35" y="159" textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="bold">
+                          {statsMetric === 'revenue' ? '1.5M' : '2.5'}
+                        </text>
+
+                        <line x1="40" y1="195" x2="720" y2="195" stroke="#cbd5e1" strokeWidth="1.5" />
+                      </g>
+
+                      {/* 1. Comparison Curve: Last Week (Dashed Gray) */}
+                      <path
+                        d={lastWeekLinePath}
+                        fill="none"
+                        stroke="#94a3b8"
+                        strokeWidth="2.5"
+                        strokeDasharray="5 5"
+                      />
+
+                      {/* 2. MoMo Growth Gradient Area Fill (This Week) */}
+                      <path
+                        d={currentAreaPath}
+                        fill="url(#restMomoAreaGradient)"
+                      />
+
+                      {/* 3. MoMo Smooth Main Spline Curve */}
+                      <path
+                        d={currentLinePath}
+                        fill="none"
+                        stroke="url(#restMomoLineGradient)"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        filter="url(#restMomoGlow)"
+                      />
+
+                      {/* Vertical Guideline & Tooltip when a point is hovered */}
+                      {statsHoveredDay !== null && (() => {
+                        const pt = currentPoints[statsHoveredDay];
+                        return (
+                          <g className="transition-all duration-200">
+                            {/* Vertical highlight line */}
+                            <line
+                              x1={pt.x}
+                              y1={30}
+                              x2={pt.x}
+                              y2={195}
+                              stroke="#ea580c"
+                              strokeWidth="2"
+                              strokeDasharray="3 3"
+                              className="animate-pulse"
+                            />
+
+                            {/* Floating MoMo Tooltip Card */}
+                            <g transform={`translate(${Math.min(Math.max(pt.x - 70, 10), 620)}, ${Math.max(pt.y - 65, 10)})`}>
+                              <rect
+                                width="140"
+                                height="55"
+                                rx="14"
+                                fill="#0f172a"
+                                opacity="0.95"
+                                className="shadow-2xl"
+                              />
+                              <text x="70" y="18" textAnchor="middle" fill="#f8fafc" fontSize="11" fontWeight="bold">
+                                {pt.item.day} ({pt.item.date})
+                              </text>
+                              <text x="70" y="34" textAnchor="middle" fill="#f59e0b" fontSize="12" fontWeight="900">
+                                {statsMetric === 'revenue' ? formatCurrency(pt.item.gmv) : `${pt.item.tables} bàn ghép`}
+                              </text>
+                              <text x="70" y="47" textAnchor="middle" fill="#10b981" fontSize="9" fontWeight="bold">
+                                Thực nhận: {formatCurrency(pt.item.net)}
+                              </text>
+                            </g>
+                          </g>
+                        );
+                      })()}
+
+                      {/* 4. Interactive Data Points with pulse rings */}
+                      {currentPoints.map((pt, idx) => {
+                        const isHovered = statsHoveredDay === idx;
+                        const isPeak = idx === 5 || idx === 4;
+
+                        return (
+                          <g
+                            key={pt.item.day}
+                            className="cursor-pointer"
+                            onMouseEnter={() => setStatsHoveredDay(idx)}
+                            onMouseLeave={() => setStatsHoveredDay(null)}
+                          >
+                            {/* Larger invisible hitbox for effortless hover */}
+                            <circle cx={pt.x} cy={pt.y} r="22" fill="transparent" />
+
+                            {/* Pulsing ring on hover or peak */}
+                            {(isHovered || isPeak) && (
+                              <circle
+                                cx={pt.x}
+                                cy={pt.y}
+                                r={isHovered ? '13' : '10'}
+                                fill="#f97316"
+                                opacity={isHovered ? '0.4' : '0.2'}
+                                className={isHovered ? 'animate-ping' : ''}
+                              />
+                            )}
+
+                            {/* Main outer ring */}
+                            <circle
+                              cx={pt.x}
+                              cy={pt.y}
+                              r={isHovered ? '8' : isPeak ? '7' : '5.5'}
+                              fill="#ffffff"
+                              stroke={isHovered ? '#ea580c' : isPeak ? '#f59e0b' : '#ea580c'}
+                              strokeWidth={isHovered ? '3.5' : '2.5'}
+                              className="transition-all duration-200"
+                            />
+
+                            {/* Inner core dot */}
+                            <circle
+                              cx={pt.x}
+                              cy={pt.y}
+                              r={isHovered ? '4' : '2.5'}
+                              fill={isHovered ? '#ea580c' : '#ffffff'}
+                            />
+
+                            {/* X-axis Day labels */}
+                            <text
+                              x={pt.x}
+                              y="215"
+                              textAnchor="middle"
+                              fontSize="11"
+                              fontWeight={isHovered ? '900' : 'bold'}
+                              fill={isHovered ? '#ea580c' : '#475569'}
+                            >
+                              {pt.item.day}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+                );
+              })()}
+
+              {/* Bottom Insight Footer */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50/80 to-orange-50/60 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
                   <span className="text-slate-700 font-medium">
                     {statsHoveredDay !== null ? (
                       <>
-                        <strong className="text-slate-900">{dailyStats[statsHoveredDay].day} ({dailyStats[statsHoveredDay].date})</strong>: Doanh thu gộp <strong>{formatCurrency(dailyStats[statsHoveredDay].gmv)}</strong> &bull; Thực nhận quán: <strong className="text-emerald-700">{formatCurrency(dailyStats[statsHoveredDay].net)}</strong> &bull; Phục vụ: <strong>{dailyStats[statsHoveredDay].tables} bàn ghép ({dailyStats[statsHoveredDay].guests} khách)</strong>.
+                        <strong className="text-slate-900">{dailyStats[statsHoveredDay].day} ({dailyStats[statsHoveredDay].date})</strong>: Doanh thu gộp <strong>{formatCurrency(dailyStats[statsHoveredDay].gmv)}</strong> &bull; Thực nhận quán: <strong className="text-emerald-700 font-bold">{formatCurrency(dailyStats[statsHoveredDay].net)}</strong> &bull; Phục vụ: <strong>{dailyStats[statsHoveredDay].tables} bàn ghép ({dailyStats[statsHoveredDay].guests} khách)</strong>.
                       </>
                     ) : (
                       <>

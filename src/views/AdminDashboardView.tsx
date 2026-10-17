@@ -1184,9 +1184,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
           </div>
 
-          {/* TOP 3 RESTAURANTS HIGH-CONTRAST GOURMET CARDS */}
+          {/* TOP 3 RESTAURANTS HIGH-CONTRAST GOURMET CARDS OR LIST */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
                   <Award className="w-5 h-5 text-amber-500" />
@@ -1194,73 +1194,178 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </h3>
                 <p className="text-xs text-slate-500">Các đối tác ẩm thực đón nhiều nhóm khách gom nhất trên Chạm Đũa</p>
               </div>
-              <button
-                onClick={() => onSectionChange && onSectionChange('restaurants')}
-                className="text-xs font-black text-brand-600 hover:text-brand-700 flex items-center gap-1"
-              >
-                <span>Xem tất cả quán ăn</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {restaurants.slice(0, 3).map((r, idx) => (
-                <div
-                  key={r.id}
-                  onClick={() => setSelectedRestDetail(r)}
-                  className="group bg-white rounded-3xl border-2 border-slate-200/90 hover:border-brand-500 overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="relative h-44 overflow-hidden">
-                    <img
-                      src={r.coverImage}
-                      alt={r.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                    
-                    {/* Badge rank */}
-                    <div className="absolute top-3 left-3 flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md">
-                        #{idx + 1}
-                      </span>
-                      {r.badge && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase">
-                          💎 {r.badge}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="absolute bottom-3 left-3 right-3 text-white">
-                      <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wide">
-                        {r.category}
-                      </span>
-                      <h4 className="font-black text-base text-white truncate drop-shadow-sm">{r.name}</h4>
-                    </div>
-                  </div>
-
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500 font-semibold">Doanh thu sàn:</span>
-                      <span className="font-black text-emerald-600 text-sm">
-                        {formatCurrency(r.monthlyRevenue || 65000000)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-                      <span className="text-slate-500 font-semibold">Hoa hồng sàn ({r.commissionRate || 10}%):</span>
-                      <span className="font-black text-amber-600">
-                        {formatCurrency(Math.round((r.monthlyRevenue || 65000000) * ((r.commissionRate || 10) / 100)))}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                      <span className="font-bold text-amber-600">★ {r.rating} ({r.reviewCount} đánh giá)</span>
-                      <span className="text-brand-600 font-black group-hover:underline">Chi tiết menu &rarr;</span>
-                    </div>
-                  </div>
+              <div className="flex items-center gap-2.5">
+                {/* View Mode Switcher */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                  <button
+                    onClick={() => setViewMode('card')}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                      viewMode === 'card'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Chuyển sang dạng Thẻ (Card)"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Card</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                      viewMode === 'list'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Chuyển sang dạng Bảng Danh Sách (List Table)"
+                  >
+                    <List className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">List</span>
+                  </button>
                 </div>
-              ))}
+
+                <button
+                  onClick={() => onSectionChange && onSectionChange('restaurants')}
+                  className="text-xs font-black text-brand-600 hover:text-brand-700 flex items-center gap-1"
+                >
+                  <span>Xem tất cả quán ăn</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+
+            {viewMode === 'list' ? (
+              <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b-2 border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                        <th className="py-3.5 px-4 text-center">Hạng</th>
+                        <th className="py-3.5 px-4">Nhà Hàng Đối Tác</th>
+                        <th className="py-3.5 px-4">Ẩm Thực</th>
+                        <th className="py-3.5 px-4">Doanh Thu Toàn Sàn</th>
+                        <th className="py-3.5 px-4">Hoa Hồng Nền Tảng</th>
+                        <th className="py-3.5 px-4 text-center">Đánh Giá</th>
+                        <th className="py-3.5 px-4 text-right">Chi Tiết</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {restaurants.slice(0, 3).map((r, idx) => (
+                        <tr
+                          key={r.id}
+                          onClick={() => setSelectedRestDetail(r)}
+                          className="hover:bg-amber-50/40 transition-colors cursor-pointer"
+                        >
+                          <td className="py-3 px-4 text-center">
+                            <span className="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black text-xs inline-flex items-center justify-center shadow-xs">
+                              #{idx + 1}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={r.coverImage}
+                                alt={r.name}
+                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs"
+                              />
+                              <div>
+                                <span className="font-black text-slate-900 text-sm block">{r.name}</span>
+                                {r.badge && (
+                                  <span className="text-[10px] font-bold text-amber-600">💎 {r.badge}</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-bold">
+                              {r.category}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-black text-emerald-600 text-sm">
+                              {formatCurrency(r.monthlyRevenue || 65000000)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-black text-amber-600">
+                              {formatCurrency(Math.round((r.monthlyRevenue || 65000000) * ((r.commissionRate || 10) / 100)))}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block font-semibold">({r.commissionRate || 10}%)</span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="font-bold text-amber-600">★ {r.rating}</span>
+                            <span className="text-[10px] text-slate-400 block">({r.reviewCount})</span>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <span className="text-brand-600 font-black text-xs hover:underline inline-flex items-center gap-1">
+                              Xem menu &rarr;
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {restaurants.slice(0, 3).map((r, idx) => (
+                  <div
+                    key={r.id}
+                    onClick={() => setSelectedRestDetail(r)}
+                    className="group bg-white rounded-3xl border-2 border-slate-200/90 hover:border-brand-500 overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="relative h-44 overflow-hidden">
+                      <img
+                        src={r.coverImage}
+                        alt={r.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                      
+                      {/* Badge rank */}
+                      <div className="absolute top-3 left-3 flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md">
+                          #{idx + 1}
+                        </span>
+                        {r.badge && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase">
+                            💎 {r.badge}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="absolute bottom-3 left-3 right-3 text-white">
+                        <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wide">
+                          {r.category}
+                        </span>
+                        <h4 className="font-black text-base text-white truncate drop-shadow-sm">{r.name}</h4>
+                      </div>
+                    </div>
+
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-semibold">Doanh thu sàn:</span>
+                        <span className="font-black text-emerald-600 text-sm">
+                          {formatCurrency(r.monthlyRevenue || 65000000)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+                        <span className="text-slate-500 font-semibold">Hoa hồng sàn ({r.commissionRate || 10}%):</span>
+                        <span className="font-black text-amber-600">
+                          {formatCurrency(Math.round((r.monthlyRevenue || 65000000) * ((r.commissionRate || 10) / 100)))}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                        <span className="font-bold text-amber-600">★ {r.rating} ({r.reviewCount} đánh giá)</span>
+                        <span className="text-brand-600 font-black group-hover:underline">Chi tiết menu &rarr;</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
@@ -2246,11 +2351,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 5: MODERATION & REPORTS (REDESIGNED BOLD CONTRAST CARDS) */}
+      {/* TAB 5: MODERATION & REPORTS (CARD VS LIST TABLE) */}
       {/* ========================================================================= */}
       {activeSection === 'moderation' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
             <div>
               <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-rose-600" />
@@ -2261,120 +2366,256 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              {(['ALL', 'PENDING', 'RESOLVED', 'DISMISSED'] as const).map((st) => (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                {(['ALL', 'PENDING', 'RESOLVED', 'DISMISSED'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setReportStatusFilter(st)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                      reportStatusFilter === st
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    {st === 'ALL' && 'Tất cả'}
+                    {st === 'PENDING' && `Chờ xử lý (${pendingReportsCount})`}
+                    {st === 'RESOLVED' && 'Đã giải quyết'}
+                    {st === 'DISMISSED' && 'Bác đơn'}
+                  </button>
+                ))}
+              </div>
+
+              {/* View Mode Switcher: Card vs List */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold flex-shrink-0 ml-1">
                 <button
-                  key={st}
-                  onClick={() => setReportStatusFilter(st)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                    reportStatusFilter === st
+                  onClick={() => setViewMode('card')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'card'
                       ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
+                  title="Chuyển sang dạng Thẻ (Card)"
                 >
-                  {st === 'ALL' && 'Tất cả'}
-                  {st === 'PENDING' && `Chờ xử lý (${pendingReportsCount})`}
-                  {st === 'RESOLVED' && 'Đã giải quyết'}
-                  {st === 'DISMISSED' && 'Bác đơn'}
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Card</span>
                 </button>
-              ))}
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'list'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Bảng Danh Sách (List Table)"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">List</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Reports List with Bold Left Stripe and High Contrast */}
-          <div className="space-y-4">
-            {filteredReports.map((report) => (
-              <div
-                key={report.id}
-                className={`bg-white p-6 rounded-3xl border-2 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-4 border-l-8 ${
-                  report.severity === 'HIGH'
-                    ? 'border-l-rose-500 border-slate-200/90'
-                    : report.severity === 'MEDIUM'
-                    ? 'border-l-amber-500 border-slate-200/90'
-                    : 'border-l-sky-500 border-slate-200/90'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${
-                      report.severity === 'HIGH'
-                        ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                        : report.severity === 'MEDIUM'
-                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                        : 'bg-slate-100 text-slate-700 border border-slate-300'
-                    }`}>
-                      Mức độ: {report.severity}
-                    </span>
-                    <span className="text-sm font-black text-slate-900">{report.reason}</span>
-                  </div>
-
-                  <span className={`px-3 py-1 rounded-full text-xs font-black ${
-                    report.status === 'PENDING'
-                      ? 'bg-amber-500 text-slate-950 animate-pulse'
-                      : report.status === 'RESOLVED'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {report.status === 'PENDING' && '⚡ Chờ Admin Xử Lý'}
-                    {report.status === 'RESOLVED' && '✓ Đã Giải Quyết'}
-                    {report.status === 'DISMISSED' && '✕ Bác Khiếu Nại'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                    <span className="text-slate-400 block text-[10px] font-bold">Người gửi khiếu nại:</span>
-                    <strong className="text-slate-900 text-sm block mt-0.5">{report.reporterName}</strong>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Thời gian gửi: {report.createdAt}</p>
-                  </div>
-
-                  <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200">
-                    <span className="text-rose-500 block text-[10px] font-bold">Đối tượng bị phản ánh:</span>
-                    <strong className="text-rose-950 text-sm block mt-0.5">
-                      {report.reportedUserName || report.reportedRestaurantName || 'Thành viên ghép bàn'}
-                    </strong>
-                    <p className="text-[10px] text-rose-600 mt-0.5">Mã bàn ăn liên quan: {report.sessionId || 'N/A'}</p>
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-200 leading-relaxed font-medium">
-                  <strong className="text-slate-900">Chi tiết phản ánh:</strong> {report.detail}
-                </p>
-
-                {report.penaltyApplied && (
-                  <div className="p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-xs text-emerald-950 font-bold flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span><strong>Kết quả xử lý:</strong> {report.penaltyApplied}</span>
-                  </div>
-                )}
-
-                {report.status === 'PENDING' && (
-                  <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2 text-xs">
-                    <button
-                      onClick={() => handleResolveReport(report, 'DISMISS')}
-                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 transition-colors"
-                    >
-                      Bác Đơn (Không vi phạm)
-                    </button>
-                    <button
-                      onClick={() => handleResolveReport(report, 'VOUCHER')}
-                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black flex items-center gap-1.5 shadow-sm transition-all"
-                    >
-                      <Gift className="w-4 h-4" />
-                      <span>Đền Bù Voucher 50k</span>
-                    </button>
-                    <button
-                      onClick={() => handleResolveReport(report, 'PENALTY')}
-                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black flex items-center gap-1.5 shadow-sm transition-all"
-                    >
-                      <ShieldAlert className="w-4 h-4" />
-                      <span>Trừ -0.5★ Uy Tín & Cảnh Cáo</span>
-                    </button>
-                  </div>
-                )}
+          {/* Moderation Reports: Card vs List Table */}
+          {viewMode === 'list' ? (
+            <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b-2 border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Mức Độ & Lý Do</th>
+                      <th className="py-3.5 px-4">Người Gửi Khiếu Nại</th>
+                      <th className="py-3.5 px-4">Đối Tượng Bị Phản Ánh</th>
+                      <th className="py-3.5 px-4">Bàn Ghép</th>
+                      <th className="py-3.5 px-4 text-center">Trạng Thái</th>
+                      <th className="py-3.5 px-4 text-right">Xử Lý / Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredReports.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-slate-400 font-medium">
+                          Không có khiếu nại nào theo bộ lọc này.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredReports.map((report) => (
+                        <tr key={report.id} className="hover:bg-amber-50/40 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                                report.severity === 'HIGH'
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                  : report.severity === 'MEDIUM'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : 'bg-slate-100 text-slate-700 border border-slate-300'
+                              }`}>
+                                {report.severity}
+                              </span>
+                              <span className="font-black text-slate-900 text-xs">{report.reason}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 line-clamp-1 mt-1 max-w-sm">{report.detail}</p>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <p className="font-bold text-slate-900">{report.reporterName}</p>
+                            <p className="text-[10px] text-slate-400">{report.createdAt}</p>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <p className="font-bold text-rose-700">
+                              {report.reportedUserName || report.reportedRestaurantName || 'Thành viên'}
+                            </p>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2 py-1 bg-slate-100 rounded-lg text-[10px] font-mono font-bold text-slate-700">
+                              {report.sessionId || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black inline-block ${
+                              report.status === 'PENDING'
+                                ? 'bg-amber-400 text-slate-950 animate-pulse'
+                                : report.status === 'RESOLVED'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {report.status === 'PENDING' && 'Chờ xử lý'}
+                              {report.status === 'RESOLVED' && 'Đã giải quyết'}
+                              {report.status === 'DISMISSED' && 'Bác đơn'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            {report.status === 'PENDING' ? (
+                              <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  onClick={() => handleResolveReport(report, 'DISMISS')}
+                                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] border border-slate-200"
+                                >
+                                  Bác Đơn
+                                </button>
+                                <button
+                                  onClick={() => handleResolveReport(report, 'VOUCHER')}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[11px] shadow-xs"
+                                  title="Đền bù voucher 50k"
+                                >
+                                  Tặng Voucher
+                                </button>
+                                <button
+                                  onClick={() => handleResolveReport(report, 'PENALTY')}
+                                  className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-[11px] shadow-xs"
+                                  title="Trừ -0.5★ uy tín"
+                                >
+                                  Trừ 0.5★
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-slate-500 font-medium italic">
+                                {report.penaltyApplied || 'Đã đóng khiếu nại'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            /* Reports List with Bold Left Stripe and High Contrast */
+            <div className="space-y-4">
+              {filteredReports.map((report) => (
+                <div
+                  key={report.id}
+                  className={`bg-white p-6 rounded-3xl border-2 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-4 border-l-8 ${
+                    report.severity === 'HIGH'
+                      ? 'border-l-rose-500 border-slate-200/90'
+                      : report.severity === 'MEDIUM'
+                      ? 'border-l-amber-500 border-slate-200/90'
+                      : 'border-l-sky-500 border-slate-200/90'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                        report.severity === 'HIGH'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : report.severity === 'MEDIUM'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                          : 'bg-slate-100 text-slate-700 border border-slate-300'
+                      }`}>
+                        Mức độ: {report.severity}
+                      </span>
+                      <span className="text-sm font-black text-slate-900">{report.reason}</span>
+                    </div>
+
+                    <span className={`px-3 py-1 rounded-full text-xs font-black ${
+                      report.status === 'PENDING'
+                        ? 'bg-amber-500 text-slate-950 animate-pulse'
+                        : report.status === 'RESOLVED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {report.status === 'PENDING' && '⚡ Chờ Admin Xử Lý'}
+                      {report.status === 'RESOLVED' && '✓ Đã Giải Quyết'}
+                      {report.status === 'DISMISSED' && '✕ Bác Khiếu Nại'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                      <span className="text-slate-400 block text-[10px] font-bold">Người gửi khiếu nại:</span>
+                      <strong className="text-slate-900 text-sm block mt-0.5">{report.reporterName}</strong>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Thời gian gửi: {report.createdAt}</p>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200">
+                      <span className="text-rose-500 block text-[10px] font-bold">Đối tượng bị phản ánh:</span>
+                      <strong className="text-rose-950 text-sm block mt-0.5">
+                        {report.reportedUserName || report.reportedRestaurantName || 'Thành viên ghép bàn'}
+                      </strong>
+                      <p className="text-[10px] text-rose-600 mt-0.5">Mã bàn ăn liên quan: {report.sessionId || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-200 leading-relaxed font-medium">
+                    <strong className="text-slate-900">Chi tiết phản ánh:</strong> {report.detail}
+                  </p>
+
+                  {report.penaltyApplied && (
+                    <div className="p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-xs text-emerald-950 font-bold flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span><strong>Kết quả xử lý:</strong> {report.penaltyApplied}</span>
+                    </div>
+                  )}
+
+                  {report.status === 'PENDING' && (
+                    <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2 text-xs">
+                      <button
+                        onClick={() => handleResolveReport(report, 'DISMISS')}
+                        className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 transition-colors"
+                      >
+                        Bác Đơn (Không vi phạm)
+                      </button>
+                      <button
+                        onClick={() => handleResolveReport(report, 'VOUCHER')}
+                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black flex items-center gap-1.5 shadow-sm transition-all"
+                      >
+                        <Gift className="w-4 h-4" />
+                        <span>Đền Bù Voucher 50k</span>
+                      </button>
+                      <button
+                        onClick={() => handleResolveReport(report, 'PENALTY')}
+                        className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black flex items-center gap-1.5 shadow-sm transition-all"
+                      >
+                        <ShieldAlert className="w-4 h-4" />
+                        <span>Trừ -0.5★ Uy Tín & Cảnh Cáo</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -2394,72 +2635,167 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </p>
             </div>
 
-            <button
-              onClick={() => setIsAddCampaignModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tạo Mã Ưu Đãi Mới</span>
-            </button>
-          </div>
-
-          {/* Campaigns Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {campaigns.map((camp) => (
-              <div
-                key={camp.id}
-                className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl transition-all flex flex-col justify-between space-y-4 relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span className="font-mono text-sm font-black px-3 py-1 bg-amber-50 text-amber-900 rounded-xl border border-amber-300">
-                      🎟️ {camp.code}
-                    </span>
-                    <h4 className="font-black text-base text-slate-900 mt-2.5">{camp.title}</h4>
-                    <span className="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full inline-block mt-1 border border-rose-200">
-                      {camp.discount}
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => handleToggleCampaign(camp.id)}
-                    className={`px-3 py-1 rounded-xl text-xs font-black transition-colors ${
-                      camp.status === 'ACTIVE'
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : 'bg-slate-100 text-slate-500 border border-slate-300'
-                    }`}
-                  >
-                    {camp.status === 'ACTIVE' ? 'Đang chạy' : 'Tạm dừng'}
-                  </button>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-3 gap-2 text-[11px] text-slate-700">
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Quy mô nhóm:</span>
-                    <strong className="font-bold">Từ {camp.minGroup} người</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Đã sử dụng:</span>
-                    <strong className="text-brand-600 font-black">{camp.usedCount} lượt</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Hạn dùng:</span>
-                    <strong className="font-bold">{camp.expiry}</strong>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                  <span>Ngân sách tài trợ: <strong className="text-slate-900 font-bold">{formatCurrency(camp.budget)}</strong></span>
-                  <span className="text-slate-500 font-medium">Áp dụng: {camp.targetCategory || 'Tất cả'}</span>
-                </div>
+            <div className="flex items-center gap-2.5">
+              {/* View Mode Switcher */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'card'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Thẻ (Card)"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Card</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'list'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Bảng Danh Sách (List Table)"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">List</span>
+                </button>
               </div>
-            ))}
+
+              <button
+                onClick={() => setIsAddCampaignModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tạo Mã Ưu Đãi Mới</span>
+              </button>
+            </div>
           </div>
+
+          {/* Campaigns: Card vs List Table */}
+          {viewMode === 'list' ? (
+            <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b-2 border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Mã Voucher</th>
+                      <th className="py-3.5 px-4">Chiến Dịch & Mức Giảm</th>
+                      <th className="py-3.5 px-4">Điều Kiện Nhóm</th>
+                      <th className="py-3.5 px-4 text-center">Đã Sử Dụng</th>
+                      <th className="py-3.5 px-4">Ngân Sách Tài Trợ</th>
+                      <th className="py-3.5 px-4">Hạn Dùng</th>
+                      <th className="py-3.5 px-4 text-right">Trạng Thái / Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {campaigns.map((camp) => (
+                      <tr key={camp.id} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <span className="font-mono text-xs font-black px-2.5 py-1 bg-amber-50 text-amber-900 rounded-lg border border-amber-300 inline-block">
+                            🎟️ {camp.code}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-black text-slate-900 text-xs block">{camp.title}</span>
+                          <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full inline-block mt-0.5 border border-rose-200">
+                            {camp.discount}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-bold text-slate-800">Từ {camp.minGroup} người</p>
+                          <p className="text-[10px] text-slate-400">Áp dụng: {camp.targetCategory || 'Tất cả'}</p>
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 text-brand-600 font-black text-xs">
+                            {camp.usedCount} lượt
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-black text-slate-900 text-xs">{formatCurrency(camp.budget)}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 font-medium">
+                          {camp.expiry}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => handleToggleCampaign(camp.id)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-colors ${
+                              camp.status === 'ACTIVE'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200'
+                                : 'bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200'
+                            }`}
+                          >
+                            {camp.status === 'ACTIVE' ? 'Đang chạy' : 'Tạm dừng'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* Campaigns Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {campaigns.map((camp) => (
+                <div
+                  key={camp.id}
+                  className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl transition-all flex flex-col justify-between space-y-4 relative overflow-hidden"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="font-mono text-sm font-black px-3 py-1 bg-amber-50 text-amber-900 rounded-xl border border-amber-300">
+                        🎟️ {camp.code}
+                      </span>
+                      <h4 className="font-black text-base text-slate-900 mt-2.5">{camp.title}</h4>
+                      <span className="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full inline-block mt-1 border border-rose-200">
+                        {camp.discount}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => handleToggleCampaign(camp.id)}
+                      className={`px-3 py-1 rounded-xl text-xs font-black transition-colors ${
+                        camp.status === 'ACTIVE'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-slate-100 text-slate-500 border border-slate-300'
+                      }`}
+                    >
+                      {camp.status === 'ACTIVE' ? 'Đang chạy' : 'Tạm dừng'}
+                    </button>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-3 gap-2 text-[11px] text-slate-700">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Quy mô nhóm:</span>
+                      <strong className="font-bold">Từ {camp.minGroup} người</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Đã sử dụng:</span>
+                      <strong className="text-brand-600 font-black">{camp.usedCount} lượt</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Hạn dùng:</span>
+                      <strong className="font-bold">{camp.expiry}</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+                    <span>Ngân sách tài trợ: <strong className="text-slate-900 font-bold">{formatCurrency(camp.budget)}</strong></span>
+                    <span className="text-slate-500 font-medium">Áp dụng: {camp.targetCategory || 'Tất cả'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 7: FINANCE & COMMISSION PAYOUTS */}
+      {/* TAB 7: FINANCE & COMMISSION PAYOUTS (CARD VS LIST TABLE) */}
       {/* ========================================================================= */}
       {activeSection === 'finance' && (
         <div className="space-y-6">
@@ -2473,60 +2809,155 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 Giám sát dòng tiền thanh toán bàn ăn, trích xuất hoa hồng và chuyển khoản định kỳ cho nhà hàng
               </p>
             </div>
-          </div>
 
-          {/* Payouts Table */}
-          <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b-2 border-slate-200 text-slate-600 uppercase tracking-wider text-[10px]">
-                  <tr>
-                    <th className="p-4 font-black">Đối Tác Nhà Hàng</th>
-                    <th className="p-4 font-black">Kỳ Đối Soát</th>
-                    <th className="p-4 font-black">Tổng GMV Bàn Ăn</th>
-                    <th className="p-4 font-black">Hoa Hồng Sàn (%)</th>
-                    <th className="p-4 font-black">Phí Sàn Giữ Lại</th>
-                    <th className="p-4 font-black">Thực Chuyển Nhà Hàng</th>
-                    <th className="p-4 font-black">Trạng Thái</th>
-                    <th className="p-4 font-black text-right">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {payouts.map((pay) => (
-                    <tr key={pay.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="p-4 font-black text-slate-900 text-sm">{pay.restaurantName}</td>
-                      <td className="p-4 text-slate-500 font-medium">{pay.period}</td>
-                      <td className="p-4 font-black text-slate-900">{formatCurrency(pay.totalGMV)}</td>
-                      <td className="p-4 font-black text-amber-600">{pay.commissionRate}%</td>
-                      <td className="p-4 font-bold text-slate-900">{formatCurrency(pay.commissionFee)}</td>
-                      <td className="p-4 font-black text-emerald-600 text-sm">{formatCurrency(pay.netPayout)}</td>
-                      <td className="p-4">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                          pay.status === 'PAID'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800 animate-pulse'
-                        }`}>
-                          {pay.status === 'PAID' ? '✓ Đã thanh toán' : '⏳ Chờ đối soát'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        {pay.status === 'PENDING' ? (
-                          <button
-                            onClick={() => handleConfirmPayout(pay.id)}
-                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-xs"
-                          >
-                            Xác Nhận Đã Chuyển
-                          </button>
-                        ) : (
-                          <span className="text-[11px] text-slate-400 font-medium">Đã chi trả: {pay.payoutDate}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* View Mode Switcher */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold flex-shrink-0">
+              <button
+                onClick={() => setViewMode('card')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                  viewMode === 'card'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Chuyển sang dạng Thẻ (Card)"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Card</span>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Chuyển sang dạng Bảng Danh Sách (List Table)"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">List</span>
+              </button>
             </div>
           </div>
+
+          {/* Finance: Card Grid vs List Table */}
+          {viewMode === 'list' ? (
+            <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-50 border-b-2 border-slate-200 text-slate-600 uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="p-4 font-black">Đối Tác Nhà Hàng</th>
+                      <th className="p-4 font-black">Kỳ Đối Soát</th>
+                      <th className="p-4 font-black">Tổng GMV Bàn Ăn</th>
+                      <th className="p-4 font-black">Hoa Hồng Sàn (%)</th>
+                      <th className="p-4 font-black">Phí Sàn Giữ Lại</th>
+                      <th className="p-4 font-black">Thực Chuyển Nhà Hàng</th>
+                      <th className="p-4 font-black text-center">Trạng Thái</th>
+                      <th className="p-4 font-black text-right">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {payouts.map((pay) => (
+                      <tr key={pay.id} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="p-4 font-black text-slate-900 text-sm">{pay.restaurantName}</td>
+                        <td className="p-4 text-slate-500 font-medium">{pay.period}</td>
+                        <td className="p-4 font-black text-slate-900">{formatCurrency(pay.totalGMV)}</td>
+                        <td className="p-4 font-black text-amber-600">{pay.commissionRate}%</td>
+                        <td className="p-4 font-bold text-slate-900">{formatCurrency(pay.commissionFee)}</td>
+                        <td className="p-4 font-black text-emerald-600 text-sm">{formatCurrency(pay.netPayout)}</td>
+                        <td className="p-4 text-center">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black inline-block ${
+                            pay.status === 'PAID'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800 animate-pulse'
+                          }`}>
+                            {pay.status === 'PAID' ? '✓ Đã thanh toán' : '⏳ Chờ đối soát'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          {pay.status === 'PENDING' ? (
+                            <button
+                              onClick={() => handleConfirmPayout(pay.id)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-xs transition-colors"
+                            >
+                              Xác Nhận Đã Chuyển
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 font-medium">Đã chi trả: {pay.payoutDate}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* Finance Gourmet Cards Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {payouts.map((pay) => (
+                <div
+                  key={pay.id}
+                  className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl transition-all overflow-hidden flex flex-col justify-between"
+                >
+                  <div className={`h-2 w-full ${pay.status === 'PAID' ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+                  
+                  <div className="p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="font-black text-base text-slate-900">{pay.restaurantName}</h4>
+                        <span className="text-[11px] font-bold text-slate-400 mt-0.5 block">Kỳ đối soát: {pay.period}</span>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
+                        pay.status === 'PAID'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800 animate-pulse'
+                      }`}>
+                        {pay.status === 'PAID' ? '✓ Đã thanh toán' : '⏳ Chờ đối soát'}
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-400 block text-[10px] font-semibold">Tổng GMV Bàn:</span>
+                        <strong className="font-black text-slate-900 text-sm">{formatCurrency(pay.totalGMV)}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px] font-semibold">Tỷ lệ hoa hồng:</span>
+                        <strong className="font-black text-amber-600 text-sm">{pay.commissionRate}%</strong>
+                      </div>
+                      <div className="pt-2 border-t border-slate-200/60">
+                        <span className="text-slate-400 block text-[10px] font-semibold">Phí sàn trích giữ:</span>
+                        <strong className="font-bold text-slate-800">{formatCurrency(pay.commissionFee)}</strong>
+                      </div>
+                      <div className="pt-2 border-t border-slate-200/60">
+                        <span className="text-emerald-700 block text-[10px] font-bold">Thực chuyển quán:</span>
+                        <strong className="font-black text-emerald-600 text-sm">{formatCurrency(pay.netPayout)}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      {pay.status === 'PAID' ? `Ủy nhiệm: ${pay.payoutDate}` : 'Chưa quyết toán ngân hàng'}
+                    </span>
+                    {pay.status === 'PENDING' ? (
+                      <button
+                        onClick={() => handleConfirmPayout(pay.id)}
+                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-xs transition-colors"
+                      >
+                        Xác Nhận Đã Chuyển
+                      </button>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-600 font-bold text-[11px] border border-slate-200">
+                        Đã Hoàn Tất
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -41,7 +41,9 @@ import {
   Activity,
   ArrowUpRight,
   PieChart,
-  BarChart2
+  BarChart2,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { Restaurant, User, GroupVoucher, DiningSession, DiningReport, PlatformCampaign, FinancialPayout } from '../types';
 import { storageService } from '../services/storageService';
@@ -64,6 +66,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [reports, setReports] = useState<DiningReport[]>(() => storageService.getReports());
   const [campaigns, setCampaigns] = useState<PlatformCampaign[]>(() => storageService.getCampaigns());
   const [payouts, setPayouts] = useState<FinancialPayout[]>(() => storageService.getPayouts());
+
+  // Global View Mode for Admin Pages (Card Grid vs Table List)
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   // Restaurant filter & search
   const [restStatusFilter, setRestStatusFilter] = useState<'ALL' | 'ACTIVE' | 'PENDING' | 'LOCKED'>('ALL');
@@ -1297,6 +1302,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </button>
               ))}
 
+              {/* View Mode Switcher: Card vs List */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold flex-shrink-0">
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'card'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Thẻ (Card Grid)"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Card</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'list'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Danh Sách (List Table)"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">List</span>
+                </button>
+              </div>
+
               <button
                 onClick={() => setIsAddRestModalOpen(true)}
                 className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 text-white font-black text-xs flex items-center gap-1 shadow-xs whitespace-nowrap ml-1"
@@ -1307,155 +1340,284 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
 
-          {/* RESTAURANTS CARDS GRID WITH HIGH CONTRAST */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredRestaurants.map((rest) => {
-              const status = rest.status || (rest.isRegisteredOnSystem ? 'ACTIVE' : 'PENDING');
-              const isLocked = status === 'LOCKED';
-              const isPending = status === 'PENDING';
+          {/* RESTAURANTS VIEW: LIST TABLE OR CARD GRID */}
+          {viewMode === 'list' ? (
+            <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b-2 border-slate-200 text-slate-500 font-black uppercase text-[11px] tracking-wider">
+                      <th className="py-3.5 px-4">Nhà Hàng Đối Tác</th>
+                      <th className="py-3.5 px-4">Thể Loại & Món Ăn</th>
+                      <th className="py-3.5 px-4">Trạng Thái & Huy Hiệu</th>
+                      <th className="py-3.5 px-4 text-right">Doanh Số Sàn</th>
+                      <th className="py-3.5 px-4 text-center">Hoa Hồng (Commission)</th>
+                      <th className="py-3.5 px-4">Đánh Giá & Chỗ Ngồi</th>
+                      <th className="py-3.5 px-4 text-right">Thao Tác Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium">
+                    {filteredRestaurants.map((rest) => {
+                      const status = rest.status || (rest.isRegisteredOnSystem ? 'ACTIVE' : 'PENDING');
+                      const isLocked = status === 'LOCKED';
+                      const isPending = status === 'PENDING';
 
-              return (
-                <div
-                  key={rest.id}
-                  className={`group bg-white rounded-3xl border-2 overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl transition-all duration-300 flex flex-col justify-between ${
-                    isPending
-                      ? 'border-amber-400 ring-4 ring-amber-100'
-                      : isLocked
-                      ? 'border-rose-300 opacity-80'
-                      : 'border-slate-200/90 hover:border-brand-500'
-                  }`}
-                >
-                  {/* Photo & Badges */}
-                  <div className="h-44 relative overflow-hidden">
-                    <img
-                      src={rest.coverImage}
-                      alt={rest.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                    
-                    {/* Top status badges */}
-                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white shadow-md ${
-                        isPending
-                          ? 'bg-amber-500 animate-pulse text-slate-950 font-black'
-                          : isLocked
-                          ? 'bg-rose-600'
-                          : 'bg-emerald-600'
-                      }`}>
-                        {isPending && '⚡ Chờ Duyệt'}
-                        {isLocked && '🔒 Đã Khóa'}
-                        {!isPending && !isLocked && '✓ Hoạt Động'}
-                      </span>
-
-                      {rest.badge && (
-                        <span className="px-2 py-0.5 rounded-full bg-slate-900/90 text-amber-300 text-[10px] font-black border border-amber-400/40 shadow-sm">
-                          {rest.badge === 'DIAMOND' && '💎 Kim Cương'}
-                          {rest.badge === 'GOLD' && '🥇 Vàng'}
-                          {rest.badge === 'MICHELIN' && '🌟 Michelin'}
-                          {rest.badge === 'VERIFIED' && '🛡️ Xác Thực'}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="absolute bottom-3 left-3 right-3 text-white">
-                      <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wide">
-                        {rest.category}
-                      </span>
-                      <h3 className="text-base font-black truncate drop-shadow-sm">{rest.name}</h3>
-                    </div>
-                  </div>
-
-                  {/* Body & Business Info */}
-                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3.5">
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center gap-1.5 text-slate-700">
-                        <MapPin className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
-                        <span className="truncate font-medium">{rest.address}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-slate-500">
-                        <span>Hotline: <strong>{rest.phone}</strong></span>
-                        <span className="font-black text-amber-600 flex items-center gap-1">
-                          ★ {rest.rating} ({rest.reviewCount})
-                        </span>
-                      </div>
-
-                      {/* Featured Dishes Chips */}
-                      {rest.featuredDishes && rest.featuredDishes.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          {rest.featuredDishes.slice(0, 3).map((dish, i) => (
-                            <span key={i} className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 text-[10px] font-bold border border-amber-200">
-                              {dish}
+                      return (
+                        <tr key={rest.id} className="hover:bg-amber-50/40 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={rest.coverImage}
+                                alt={rest.name}
+                                className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-200 shadow-xs flex-shrink-0"
+                              />
+                              <div>
+                                <strong className="text-slate-900 font-black text-sm block">{rest.name}</strong>
+                                <span className="text-[11px] text-slate-500 truncate max-w-xs block">{rest.address}</span>
+                                <span className="text-[10px] text-slate-400">Hotline: {rest.phone}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 inline-block mb-1">
+                              {rest.category}
                             </span>
-                          ))}
-                        </div>
-                      )}
+                            {rest.featuredDishes && (
+                              <div className="text-[10px] text-slate-500 truncate max-w-xs">
+                                {rest.featuredDishes.slice(0, 2).join(' • ')}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                isPending
+                                  ? 'bg-amber-500 text-slate-950 animate-pulse'
+                                  : isLocked
+                                  ? 'bg-rose-600 text-white'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {isPending && '⚡ Chờ Duyệt'}
+                                {isLocked && '🔒 Đã Khóa'}
+                                {!isPending && !isLocked && '✓ Hoạt Động'}
+                              </span>
+                              {rest.badge && (
+                                <span className="text-[10px] font-bold text-amber-600">
+                                  💎 {rest.badge}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <span className="font-black text-slate-900 text-sm">
+                              {formatCurrency(rest.monthlyRevenue || 45000000)}
+                            </span>
+                            <span className="block text-[10px] text-slate-400">Theo tháng</span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className="font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 text-xs">
+                              {rest.commissionRate || 10}%
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-black text-amber-600 block">★ {rest.rating} ({rest.reviewCount})</span>
+                            <span className="text-[10px] text-slate-500">Sức chứa: {rest.capacity || 100} chỗ</span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isPending ? (
+                                <button
+                                  onClick={() => handleApproveRestaurant(rest.id)}
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-xs"
+                                >
+                                  Duyệt Ngay
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => setSelectedRestDetail(rest)}
+                                    className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs"
+                                  >
+                                    Chi Tiết
+                                  </button>
+                                  <button
+                                    onClick={() => handleToggleLockRestaurant(rest)}
+                                    className={`p-1.5 rounded-xl border text-xs font-bold ${
+                                      isLocked ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700 hover:bg-rose-50 hover:text-rose-600'
+                                    }`}
+                                    title={isLocked ? 'Mở khóa' : 'Khóa'}
+                                  >
+                                    {isLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                onClick={() => handleDeleteRestaurant(rest.id)}
+                                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                                title="Xóa"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* RESTAURANTS CARDS GRID WITH HIGH CONTRAST */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredRestaurants.map((rest) => {
+                const status = rest.status || (rest.isRegisteredOnSystem ? 'ACTIVE' : 'PENDING');
+                const isLocked = status === 'LOCKED';
+                const isPending = status === 'PENDING';
 
-                      {/* Revenue & Commission stats */}
-                      <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 gap-2 text-[11px]">
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Doanh số sàn:</span>
-                          <span className="font-black text-slate-900 text-xs">
-                            {formatCurrency(rest.monthlyRevenue || 45000000)}
+                return (
+                  <div
+                    key={rest.id}
+                    className={`group bg-white rounded-3xl border-2 overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl transition-all duration-300 flex flex-col justify-between ${
+                      isPending
+                        ? 'border-amber-400 ring-4 ring-amber-100'
+                        : isLocked
+                        ? 'border-rose-300 opacity-80'
+                        : 'border-slate-200/90 hover:border-brand-500'
+                    }`}
+                  >
+                    {/* Photo & Badges */}
+                    <div className="h-44 relative overflow-hidden">
+                      <img
+                        src={rest.coverImage}
+                        alt={rest.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                      
+                      {/* Top status badges */}
+                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white shadow-md ${
+                          isPending
+                            ? 'bg-amber-500 animate-pulse text-slate-950 font-black'
+                            : isLocked
+                            ? 'bg-rose-600'
+                            : 'bg-emerald-600'
+                        }`}>
+                          {isPending && '⚡ Chờ Duyệt'}
+                          {isLocked && '🔒 Đã Khóa'}
+                          {!isPending && !isLocked && '✓ Hoạt Động'}
+                        </span>
+
+                        {rest.badge && (
+                          <span className="px-2 py-0.5 rounded-full bg-slate-900/90 text-amber-300 text-[10px] font-black border border-amber-400/40 shadow-sm">
+                            {rest.badge === 'DIAMOND' && '💎 Kim Cương'}
+                            {rest.badge === 'GOLD' && '🥇 Vàng'}
+                            {rest.badge === 'MICHELIN' && '🌟 Michelin'}
+                            {rest.badge === 'VERIFIED' && '🛡️ Xác Thực'}
                           </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Hoa hồng sàn:</span>
-                          <span className="font-black text-amber-700 text-xs">
-                            {rest.commissionRate || 10}% Commission
-                          </span>
-                        </div>
+                        )}
+                      </div>
+
+                      <div className="absolute bottom-3 left-3 right-3 text-white">
+                        <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wide">
+                          {rest.category}
+                        </span>
+                        <h3 className="text-base font-black truncate drop-shadow-sm">{rest.name}</h3>
                       </div>
                     </div>
 
-                    {/* Action Toolbar */}
-                    <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1.5">
-                      {isPending ? (
+                    {/* Body & Business Info */}
+                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3.5">
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-700">
+                          <MapPin className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
+                          <span className="truncate font-medium">{rest.address}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-500">
+                          <span>Hotline: <strong>{rest.phone}</strong></span>
+                          <span className="font-black text-amber-600 flex items-center gap-1">
+                            ★ {rest.rating} ({rest.reviewCount})
+                          </span>
+                        </div>
+
+                        {/* Featured Dishes Chips */}
+                        {rest.featuredDishes && rest.featuredDishes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {rest.featuredDishes.slice(0, 3).map((dish, i) => (
+                              <span key={i} className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 text-[10px] font-bold border border-amber-200">
+                                {dish}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Revenue & Commission stats */}
+                        <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 gap-2 text-[11px]">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Doanh số sàn:</span>
+                            <span className="font-black text-slate-900 text-xs">
+                              {formatCurrency(rest.monthlyRevenue || 45000000)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Hoa hồng sàn:</span>
+                            <span className="font-black text-amber-700 text-xs">
+                              {rest.commissionRate || 10}% Commission
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Toolbar */}
+                      <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1.5">
+                        {isPending ? (
+                          <button
+                            onClick={() => handleApproveRestaurant(rest.id)}
+                            className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Duyệt Đối Tác Ngay</span>
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setSelectedRestDetail(rest)}
+                              className="flex-1 py-1.5 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1 transition-colors shadow-xs"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Xem Menu & Chi Tiết</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleToggleLockRestaurant(rest)}
+                              className={`p-2 rounded-xl text-xs font-bold transition-colors border ${
+                                isLocked
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                  : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300'
+                              }`}
+                              title={isLocked ? 'Mở khóa quán' : 'Tạm khóa quán'}
+                            >
+                              {isLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                            </button>
+                          </>
+                        )}
+
                         <button
-                          onClick={() => handleApproveRestaurant(rest.id)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                          onClick={() => handleDeleteRestaurant(rest.id)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-200"
+                          title="Xóa đối tác"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Duyệt Đối Tác Ngay</span>
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => setSelectedRestDetail(rest)}
-                            className="flex-1 py-1.5 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1 transition-colors shadow-xs"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Xem Menu & Chi Tiết</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleToggleLockRestaurant(rest)}
-                            className={`p-2 rounded-xl text-xs font-bold transition-colors border ${
-                              isLocked
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300'
-                            }`}
-                            title={isLocked ? 'Mở khóa quán' : 'Tạm khóa quán'}
-                          >
-                            {isLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                          </button>
-                        </>
-                      )}
-
-                      <button
-                        onClick={() => handleDeleteRestaurant(rest.id)}
-                        className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-200"
-                        title="Xóa đối tác"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -1495,107 +1657,238 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {st === 'CANCELLED' && 'Đã hủy'}
                 </button>
               ))}
+
+              {/* View Mode Switcher: Card vs List */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold flex-shrink-0 ml-1">
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'card'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Thẻ (Card Grid)"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Card</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'list'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Danh Sách (List Table)"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">List</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Dining Sessions Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredSessions.map((session) => (
-              <div
-                key={session.id}
-                className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl transition-all flex flex-col justify-between space-y-4"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={session.restaurantImage}
-                        alt={session.restaurantName}
-                        className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-200 shadow-sm"
-                      />
+          {/* SESSIONS VIEW: LIST TABLE OR CARD GRID */}
+          {viewMode === 'list' ? (
+            <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b-2 border-slate-200 text-slate-500 font-black uppercase text-[11px] tracking-wider">
+                      <th className="py-3.5 px-4">Kèo Ghép Bàn & Quán Ăn</th>
+                      <th className="py-3.5 px-4">Giờ Ăn & Host</th>
+                      <th className="py-3.5 px-4">Thành Viên Ghép Bàn</th>
+                      <th className="py-3.5 px-4 text-right">Tổng Bill Dự Kiến</th>
+                      <th className="py-3.5 px-4 text-center">Trạng Thái Bàn</th>
+                      <th className="py-3.5 px-4 text-right">Thao Tác Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium">
+                    {filteredSessions.map((session) => (
+                      <tr key={session.id} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={session.restaurantImage}
+                              alt={session.restaurantName}
+                              className="w-11 h-11 rounded-xl object-cover border-2 border-slate-200 shadow-xs flex-shrink-0"
+                            />
+                            <div>
+                              <strong className="text-slate-900 font-black text-sm block">{session.title}</strong>
+                              <span className="text-xs font-bold text-brand-600">{session.restaurantName}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600">
+                          <span className="block font-bold text-slate-800">{session.eatingTime}</span>
+                          <span className="text-[11px] text-slate-400">Khởi xướng: <strong>{session.hostName}</strong></span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center -space-x-2">
+                              {session.joinedMembers.map((m) => (
+                                <img
+                                  key={m.userId}
+                                  src={m.avatar}
+                                  alt={m.name}
+                                  title={m.name}
+                                  className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-xs"
+                                />
+                              ))}
+                            </div>
+                            <span className="font-black text-slate-900 text-xs">
+                              {session.joinedMembers.length}/{session.targetSlots} khách
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <span className="font-black text-slate-900 text-sm">
+                            {formatCurrency(session.paymentInfo?.totalAmount || 850000)}
+                          </span>
+                          <span className="block text-[10px] text-slate-400">Chia đều nhóm</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                            session.status === 'COMPLETED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : session.status === 'LOCKED'
+                              ? 'bg-amber-100 text-amber-800'
+                              : session.status === 'CANCELLED'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-sky-100 text-sky-800'
+                          }`}>
+                            {session.status === 'COMPLETED' && '✓ Hoàn Tất'}
+                            {session.status === 'LOCKED' && '🔒 Đã Chốt Bàn'}
+                            {session.status === 'RECRUITING' && '⚡ Đang Gom'}
+                            {session.status === 'CANCELLED' && '✕ Đã Hủy'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-[10px] text-emerald-700 font-bold px-2.5 py-1 bg-emerald-50 rounded-xl border border-emerald-200 whitespace-nowrap">
+                              {session.reservationStatus === 'CONFIRMED_BY_RESTAURANT' ? 'Quán giữ bàn' : 'Chờ quán'}
+                            </span>
+                            {session.status !== 'CANCELLED' && (
+                              <button
+                                onClick={() => {
+                                  if (confirm('Bạn có chắc muốn hủy bàn ăn ghép này khẩn cấp?')) {
+                                    storageService.cancelDiningSessionByAdmin(session.id);
+                                    setSessions(storageService.getSessions());
+                                  }
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-colors whitespace-nowrap"
+                              >
+                                Hủy Bàn
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* Dining Sessions Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredSessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl transition-all flex flex-col justify-between space-y-4"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={session.restaurantImage}
+                          alt={session.restaurantName}
+                          className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-200 shadow-sm"
+                        />
+                        <div>
+                          <h4 className="font-black text-sm text-slate-900">{session.title}</h4>
+                          <span className="text-xs font-bold text-brand-600">{session.restaurantName}</span>
+                        </div>
+                      </div>
+
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        session.status === 'COMPLETED'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : session.status === 'LOCKED'
+                          ? 'bg-amber-100 text-amber-800'
+                          : session.status === 'CANCELLED'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-sky-100 text-sky-800'
+                      }`}>
+                        {session.status === 'COMPLETED' && '✓ Đã hoàn tất'}
+                        {session.status === 'LOCKED' && '🔒 Đã chốt bàn'}
+                        {session.status === 'RECRUITING' && '⚡ Đang gom khách'}
+                        {session.status === 'CANCELLED' && '✕ Đã hủy'}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-200">
                       <div>
-                        <h4 className="font-black text-sm text-slate-900">{session.title}</h4>
-                        <span className="text-xs font-bold text-brand-600">{session.restaurantName}</span>
+                        <span className="text-slate-400 block text-[10px]">Giờ hẹn ăn:</span>
+                        <strong className="text-slate-800">{session.eatingTime}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Tiến độ ghép bàn:</span>
+                        <strong className="text-slate-800">
+                          {session.joinedMembers.length} / {session.targetSlots} người
+                        </strong>
                       </div>
                     </div>
 
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                      session.status === 'COMPLETED'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : session.status === 'LOCKED'
-                        ? 'bg-amber-100 text-amber-800'
-                        : session.status === 'CANCELLED'
-                        ? 'bg-rose-100 text-rose-800'
-                        : 'bg-sky-100 text-sky-800'
-                    }`}>
-                      {session.status === 'COMPLETED' && '✓ Đã hoàn tất'}
-                      {session.status === 'LOCKED' && '🔒 Đã chốt bàn'}
-                      {session.status === 'RECRUITING' && '⚡ Đang gom khách'}
-                      {session.status === 'CANCELLED' && '✕ Đã hủy'}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Giờ hẹn ăn:</span>
-                      <strong className="text-slate-800">{session.eatingTime}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Tiến độ ghép bàn:</span>
-                      <strong className="text-slate-800">
-                        {session.joinedMembers.length} / {session.targetSlots} người
-                      </strong>
+                    {/* Joined Members Avatars */}
+                    <div className="mt-3 flex items-center justify-between text-xs">
+                      <div className="flex items-center -space-x-2">
+                        {session.joinedMembers.map((m) => (
+                          <img
+                            key={m.userId}
+                            src={m.avatar}
+                            alt={m.name}
+                            title={`${m.name} ${m.isHost ? '(Host)' : ''}`}
+                            className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-xs"
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[11px] text-slate-500">Host: <strong>{session.hostName}</strong></span>
                     </div>
                   </div>
 
-                  {/* Joined Members Avatars */}
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                    <div className="flex items-center -space-x-2">
-                      {session.joinedMembers.map((m) => (
-                        <img
-                          key={m.userId}
-                          src={m.avatar}
-                          alt={m.name}
-                          title={`${m.name} ${m.isHost ? '(Host)' : ''}`}
-                          className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-xs"
-                        />
-                      ))}
+                  {/* Bill info & Admin Actions */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Tổng hóa đơn bàn:</span>
+                      <span className="font-black text-slate-900 text-sm">
+                        {formatCurrency(session.paymentInfo?.totalAmount || 850000)}
+                      </span>
                     </div>
-                    <span className="text-[11px] text-slate-500">Host: <strong>{session.hostName}</strong></span>
+
+                    <div className="flex items-center gap-1.5">
+                      {session.status !== 'CANCELLED' && (
+                        <button
+                          onClick={() => {
+                            if (confirm('Bạn có chắc muốn hủy bàn ăn ghép này khẩn cấp?')) {
+                              storageService.cancelDiningSessionByAdmin(session.id);
+                              setSessions(storageService.getSessions());
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 text-xs font-bold transition-colors border border-slate-200"
+                        >
+                          Hủy Bàn
+                        </button>
+                      )}
+                      <span className="text-[11px] text-emerald-700 font-bold px-2.5 py-1 bg-emerald-50 rounded-xl border border-emerald-200">
+                        {session.reservationStatus === 'CONFIRMED_BY_RESTAURANT' ? 'Quán đã giữ bàn' : 'Chờ xác nhận'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-
-                {/* Bill info & Admin Actions */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Tổng hóa đơn bàn:</span>
-                    <span className="font-black text-slate-900 text-sm">
-                      {formatCurrency(session.paymentInfo?.totalAmount || 850000)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {session.status !== 'CANCELLED' && (
-                      <button
-                        onClick={() => {
-                          if (confirm('Bạn có chắc muốn hủy bàn ăn ghép này khẩn cấp?')) {
-                            storageService.cancelDiningSessionByAdmin(session.id);
-                            setSessions(storageService.getSessions());
-                          }
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 text-xs font-bold transition-colors border border-slate-200"
-                      >
-                        Hủy Bàn
-                      </button>
-                    )}
-                    <span className="text-[11px] text-emerald-700 font-bold px-2.5 py-1 bg-emerald-50 rounded-xl border border-emerald-200">
-                      {session.reservationStatus === 'CONFIRMED_BY_RESTAURANT' ? 'Quán đã giữ bàn' : 'Chờ xác nhận'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1635,141 +1928,320 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {tier === 'LOCKED' && '🔒 Đã khóa'}
                 </button>
               ))}
+              {/* View Mode Switcher: Card vs List */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold flex-shrink-0 ml-1">
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'card'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Thẻ (Card Grid)"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Card</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                    viewMode === 'list'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chuyển sang dạng Bảng Danh Sách (List Table)"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">List</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* User Cards Grid with High Visual Contrast */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredUsers.map((user) => {
-              const isVIP = user.trustScore === 5.0;
-              const isWarning = user.trustScore < 4.5;
+          {/* User Display: Card Grid vs List Table */}
+          {viewMode === 'list' ? (
+            <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b-2 border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Thành Viên</th>
+                      <th className="py-3.5 px-4">Nghề Nghiệp / Cơ Quan</th>
+                      <th className="py-3.5 px-4">Điểm Uy Tín</th>
+                      <th className="py-3.5 px-4 text-center">Bàn Đã Ghép</th>
+                      <th className="py-3.5 px-4">Gu Ẩm Thực</th>
+                      <th className="py-3.5 px-4 text-center">Trạng Thái</th>
+                      <th className="py-3.5 px-4 text-right">Thao Tác Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
+                          Không tìm thấy thành viên nào khớp bộ lọc.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((user) => {
+                        const isVIP = user.trustScore === 5.0;
+                        return (
+                          <tr key={user.id} className="hover:bg-amber-50/40 transition-colors">
+                            {/* Member info */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="relative flex-shrink-0">
+                                  <img
+                                    src={user.avatar}
+                                    alt={user.name}
+                                    className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs"
+                                  />
+                                  {isVIP && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 font-black text-[9px] flex items-center justify-center shadow-xs">
+                                      ★
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-black text-slate-900 truncate">
+                                    {user.name}
+                                  </p>
+                                  <p className="text-[11px] text-slate-500 font-medium truncate">{user.email}</p>
+                                </div>
+                              </div>
+                            </td>
 
-              return (
-                <div
-                  key={user.id}
-                  className={`bg-white rounded-3xl border-2 transition-all flex flex-col justify-between overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl hover:-translate-y-0.5 ${
-                    user.isLocked
-                      ? 'border-rose-400 ring-2 ring-rose-100'
-                      : isVIP
-                      ? 'border-amber-300 hover:border-amber-400'
-                      : isWarning
-                      ? 'border-rose-300'
-                      : 'border-slate-200/90 hover:border-brand-500'
-                  }`}
-                >
-                  {/* Card top accent stripe */}
-                  <div className={`h-2 w-full ${
-                    user.isLocked
-                      ? 'bg-rose-600'
-                      : isVIP
-                      ? 'bg-gradient-to-r from-amber-400 to-amber-500'
-                      : isWarning
-                      ? 'bg-rose-400'
-                      : 'bg-gradient-to-r from-brand-500 to-amber-400'
-                  }`} />
+                            {/* Occupation / School */}
+                            <td className="py-3 px-4">
+                              <p className="font-bold text-slate-800">{user.occupation || 'N/A'}</p>
+                              <p className="text-[10px] font-semibold text-brand-600 truncate">{user.companyOrSchool || 'Chạm Đũa Member'}</p>
+                            </td>
 
-                  <div className="p-5 space-y-4">
-                    <div className="flex items-start gap-3.5">
-                      <div className="relative">
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="w-13 h-13 rounded-2xl object-cover border-2 border-white shadow-md flex-shrink-0"
-                        />
-                        {isVIP && (
-                          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-xs">
-                            ★
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-black text-sm text-slate-900 truncate">{user.name}</h4>
-                          {user.isLocked ? (
-                            <span className="px-2 py-0.5 bg-rose-600 text-white text-[9px] font-black rounded-md">
-                              ĐÃ KHÓA
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-black rounded-md">
-                              ĐÃ XÁC THỰC
+                            {/* Trust Score */}
+                            <td className="py-3 px-4">
+                              <div className="w-36 space-y-1">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-black text-amber-600 flex items-center gap-0.5">
+                                    ★ {user.trustScore.toFixed(1)}
+                                  </span>
+                                  <span className="text-slate-400 text-[10px]">/ 5.0</span>
+                                </div>
+                                <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                  <div
+                                    className={`h-1.5 rounded-full ${
+                                      user.trustScore >= 4.5 ? 'bg-amber-400' : user.trustScore >= 3.5 ? 'bg-amber-500' : 'bg-rose-500'
+                                    }`}
+                                    style={{ width: `${(user.trustScore / 5.0) * 100}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Joined Meals */}
+                            <td className="py-3 px-4 text-center">
+                              <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs">
+                                {user.totalMealsJoined}
+                              </span>
+                            </td>
+
+                            {/* Food Tags */}
+                            <td className="py-3 px-4">
+                              <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                {user.smartTags && user.smartTags.length > 0 ? (
+                                  user.smartTags.slice(0, 2).map((tag, i) => (
+                                    <span key={i} className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold">
+                                      #{tag}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-slate-400 text-[11px] italic">Chưa chọn</span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Status */}
+                            <td className="py-3 px-4 text-center">
+                              {user.isLocked ? (
+                                <span className="px-2.5 py-1 bg-rose-600 text-white text-[10px] font-black rounded-lg inline-block">
+                                  ĐÃ KHÓA
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black rounded-lg inline-block">
+                                  ĐÃ XÁC THỰC
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Admin Actions */}
+                            <td className="py-3 px-4 text-right">
+                              <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  onClick={() => handleAdjustTrust(user, 0.1)}
+                                  className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-black text-[11px] border border-emerald-300 transition-colors"
+                                  title="Thưởng +0.1 điểm uy tín"
+                                >
+                                  +0.1★
+                                </button>
+                                <button
+                                  onClick={() => handleAdjustTrust(user, -0.2)}
+                                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 font-black text-[11px] border border-rose-300 transition-colors"
+                                  title="Trừ -0.2 điểm uy tín"
+                                >
+                                  -0.2★
+                                </button>
+                                <button
+                                  onClick={() => handleToggleUserLock(user)}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
+                                    user.isLocked
+                                      ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                                      : 'bg-white text-slate-700 border-slate-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'
+                                  }`}
+                                >
+                                  {user.isLocked ? 'Mở' : 'Khóa'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* User Cards Grid with High Visual Contrast */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredUsers.map((user) => {
+                const isVIP = user.trustScore === 5.0;
+                const isWarning = user.trustScore < 4.5;
+
+                return (
+                  <div
+                    key={user.id}
+                    className={`bg-white rounded-3xl border-2 transition-all flex flex-col justify-between overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl hover:-translate-y-0.5 ${
+                      user.isLocked
+                        ? 'border-rose-400 ring-2 ring-rose-100'
+                        : isVIP
+                        ? 'border-amber-300 hover:border-amber-400'
+                        : isWarning
+                        ? 'border-rose-300'
+                        : 'border-slate-200/90 hover:border-brand-500'
+                    }`}
+                  >
+                    {/* Card top accent stripe */}
+                    <div className={`h-2 w-full ${
+                      user.isLocked
+                        ? 'bg-rose-600'
+                        : isVIP
+                        ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+                        : isWarning
+                        ? 'bg-rose-400'
+                        : 'bg-gradient-to-r from-brand-500 to-amber-400'
+                    }`} />
+
+                    <div className="p-5 space-y-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="relative">
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-13 h-13 rounded-2xl object-cover border-2 border-white shadow-md flex-shrink-0"
+                          />
+                          {isVIP && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-xs">
+                              ★
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-600 font-medium truncate mt-0.5">{user.occupation || user.email}</p>
-                        <span className="inline-block mt-0.5 text-[10px] font-bold text-brand-600">
-                          {user.companyOrSchool || 'Thành viên Chạm Đũa'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Trust Score & Profile Progress with High Contrast */}
-                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-600 font-bold">Điểm Uy Tín (Trust Score):</span>
-                        <span className="font-black text-amber-500 text-sm flex items-center gap-1">
-                          ★ {user.trustScore.toFixed(1)} / 5.0
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                        <div
-                          className={`h-2.5 rounded-full ${
-                            user.trustScore >= 4.5 ? 'bg-amber-400' : user.trustScore >= 3.5 ? 'bg-amber-500' : 'bg-rose-500'
-                          }`}
-                          style={{ width: `${(user.trustScore / 5.0) * 100}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 font-medium">
-                        <span>Bữa ăn đã ghép: <strong className="text-slate-800">{user.totalMealsJoined}</strong></span>
-                        <span>Hồ sơ: <strong className="text-slate-800">{user.profileCompletionPercent || 100}%</strong></span>
-                      </div>
-                    </div>
-
-                    {/* Smart Food Tags */}
-                    {user.smartTags && user.smartTags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {user.smartTags.slice(0, 3).map((tag, i) => (
-                          <span key={i} className="px-2.5 py-0.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold">
-                            #{tag}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-black text-sm text-slate-900 truncate">{user.name}</h4>
+                            {user.isLocked ? (
+                              <span className="px-2 py-0.5 bg-rose-600 text-white text-[9px] font-black rounded-md">
+                                ĐÃ KHÓA
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-black rounded-md">
+                                ĐÃ XÁC THỰC
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-600 font-medium truncate mt-0.5">{user.occupation || user.email}</p>
+                          <span className="inline-block mt-0.5 text-[10px] font-bold text-brand-600">
+                            {user.companyOrSchool || 'Thành viên Chạm Đũa'}
                           </span>
-                        ))}
+                        </div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Trust score adjustment tools */}
-                  <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleAdjustTrust(user, 0.1)}
-                        className="px-2.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-black text-[11px] border border-emerald-300 transition-colors shadow-xs"
-                        title="Thưởng +0.1 điểm uy tín"
-                      >
-                        +0.1★
-                      </button>
-                      <button
-                        onClick={() => handleAdjustTrust(user, -0.2)}
-                        className="px-2.5 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 font-black text-[11px] border border-rose-300 transition-colors shadow-xs"
-                        title="Trừ -0.2 điểm uy tín"
-                      >
-                        -0.2★
-                      </button>
+                      {/* Trust Score & Profile Progress with High Contrast */}
+                      <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600 font-bold">Điểm Uy Tín (Trust Score):</span>
+                          <span className="font-black text-amber-500 text-sm flex items-center gap-1">
+                            ★ {user.trustScore.toFixed(1)} / 5.0
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                          <div
+                            className={`h-2.5 rounded-full ${
+                              user.trustScore >= 4.5 ? 'bg-amber-400' : user.trustScore >= 3.5 ? 'bg-amber-500' : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${(user.trustScore / 5.0) * 100}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 font-medium">
+                          <span>Bữa ăn đã ghép: <strong className="text-slate-800">{user.totalMealsJoined}</strong></span>
+                          <span>Hồ sơ: <strong className="text-slate-800">{user.profileCompletionPercent || 100}%</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Smart Food Tags */}
+                      {user.smartTags && user.smartTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {user.smartTags.slice(0, 3).map((tag, i) => (
+                            <span key={i} className="px-2.5 py-0.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    <button
-                      onClick={() => handleToggleUserLock(user)}
-                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors shadow-xs ${
-                        user.isLocked
-                          ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
-                          : 'bg-white text-slate-700 border-slate-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'
-                      }`}
-                    >
-                      {user.isLocked ? 'Mở Khóa' : 'Khóa Tài Khoản'}
-                    </button>
+                    {/* Trust score adjustment tools */}
+                    <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleAdjustTrust(user, 0.1)}
+                          className="px-2.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-black text-[11px] border border-emerald-300 transition-colors shadow-xs"
+                          title="Thưởng +0.1 điểm uy tín"
+                        >
+                          +0.1★
+                        </button>
+                        <button
+                          onClick={() => handleAdjustTrust(user, -0.2)}
+                          className="px-2.5 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 font-black text-[11px] border border-rose-300 transition-colors shadow-xs"
+                          title="Trừ -0.2 điểm uy tín"
+                        >
+                          -0.2★
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => handleToggleUserLock(user)}
+                        className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors shadow-xs ${
+                          user.isLocked
+                            ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'
+                        }`}
+                      >
+                        {user.isLocked ? 'Mở Khóa' : 'Khóa Tài Khoản'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

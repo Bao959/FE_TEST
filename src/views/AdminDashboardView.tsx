@@ -37,7 +37,11 @@ import {
   Gift,
   AlertCircle,
   HelpCircle,
-  FileText
+  FileText,
+  Activity,
+  ArrowUpRight,
+  PieChart,
+  BarChart2
 } from 'lucide-react';
 import { Restaurant, User, GroupVoucher, DiningSession, DiningReport, PlatformCampaign, FinancialPayout } from '../types';
 import { storageService } from '../services/storageService';
@@ -51,17 +55,9 @@ interface AdminDashboardViewProps {
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   currentUser,
-  activeSection,
+  activeSection = 'overview',
   onSectionChange
 }) => {
-  const [internalTab, setInternalTab] = useState<'overview' | 'restaurants' | 'sessions' | 'users' | 'moderation' | 'vouchers' | 'finance'>('overview');
-  const activeTab = activeSection || internalTab;
-
-  const setActiveTab = (tab: 'overview' | 'restaurants' | 'sessions' | 'users' | 'moderation' | 'vouchers' | 'finance') => {
-    setInternalTab(tab);
-    if (onSectionChange) onSectionChange(tab);
-  };
-
   const [restaurants, setRestaurants] = useState<Restaurant[]>(() => storageService.getRestaurants());
   const [users, setUsers] = useState<User[]>(() => storageService.getUsers());
   const [sessions, setSessions] = useState<DiningSession[]>(() => storageService.getSessions());
@@ -109,6 +105,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   // Reports filter
   const [reportStatusFilter, setReportStatusFilter] = useState<'ALL' | 'PENDING' | 'RESOLVED' | 'DISMISSED'>('ALL');
 
+  // 7-Day Revenue Data for Diagram
+  const revenue7Days = [
+    { day: 'Thứ 2', date: '12/10', gmv: 14200000, tables: 28, heightPercent: 38 },
+    { day: 'Thứ 3', date: '13/10', gmv: 16800000, tables: 32, heightPercent: 44 },
+    { day: 'Thứ 4', date: '14/10', gmv: 18500000, tables: 36, heightPercent: 48 },
+    { day: 'Thứ 5', date: '15/10', gmv: 22400000, tables: 44, heightPercent: 58 },
+    { day: 'Thứ 6', date: '16/10', gmv: 31600000, tables: 62, heightPercent: 82, isPeak: true },
+    { day: 'Thứ 7', date: '17/10', gmv: 38200000, tables: 78, heightPercent: 100, isPeak: true },
+    { day: 'Chủ Nhật', date: '18/10', gmv: 26500000, tables: 54, heightPercent: 70 }
+  ];
+
   // Calculations for Metrics
   const totalRestaurants = restaurants.length;
   const activeRestaurants = restaurants.filter((r) => r.status === 'ACTIVE' || (!r.status && r.isRegisteredOnSystem)).length;
@@ -117,7 +124,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   
   const totalCompletedSessions = sessions.filter((s) => s.status === 'COMPLETED').length;
   const totalGMV = sessions.reduce((acc, s) => acc + (s.paymentInfo?.totalAmount || 850000), 0) + 124500000;
-  const platformRevenue = Math.round(totalGMV * 0.1); // 10% platform take-rate
+  const platformRevenue = Math.round(totalGMV * 0.1);
 
   // Actions: Restaurant
   const handleApproveRestaurant = (restId: string) => {
@@ -285,224 +292,74 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-7 animate-in fade-in duration-200">
       
-      {/* GRAND GOURMET ADMIN HERO BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-950 text-white p-6 sm:p-8 rounded-3xl border border-amber-900/30 shadow-2xl relative overflow-hidden">
-        {/* Glow backdrop decoration */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-10 left-1/3 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-brand-500 via-amber-500 to-amber-600 flex items-center justify-center text-white text-3xl shadow-xl shadow-brand-500/30 ring-4 ring-amber-500/20">
-              🥢
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Trung Tâm Quản Trị Hệ Sinh Thái Ẩm Thực Chạm Đũa
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
-                  <Award className="w-3 h-3" /> F&B Master Admin
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                Điều phối bàn ăn ghép, thẩm định đối tác nhà hàng, đối soát hoa hồng và bảo vệ cộng đồng ẩm thực văn minh, uy tín 5.0★.
-              </p>
-            </div>
+      {/* SECTION BREADCRUMB & HEADER TITLE */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold mb-1">
+            <span>Bàn Điều Hành</span>
+            <span>/</span>
+            <span className="text-brand-600 font-bold uppercase tracking-wider">
+              {activeSection === 'overview' && 'Tổng Quan Hệ Thống'}
+              {activeSection === 'restaurants' && 'Quản Lý Đối Tác Nhà Hàng'}
+              {activeSection === 'sessions' && 'Giám Sát Bàn Ăn Ghép'}
+              {activeSection === 'users' && 'Thành Viên & Điểm Uy Tín'}
+              {activeSection === 'moderation' && 'Khiếu Nại & An Toàn Bàn Ăn'}
+              {activeSection === 'vouchers' && 'Voucher & Chiến Dịch Sàn'}
+              {activeSection === 'finance' && 'Tài Chính & Đối Soát Doanh Thu'}
+            </span>
           </div>
-
-          {/* Quick Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-            <button
-              onClick={() => setIsAddRestModalOpen(true)}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 transition-all transform active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Thêm Quán Ăn Mới</span>
-            </button>
-
-            <button
-              onClick={() => setIsAddCampaignModalOpen(true)}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
-            >
-              <Gift className="w-4 h-4 text-amber-400" />
-              <span>Phát Hành Voucher Sàn</span>
-            </button>
-          </div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            {activeSection === 'overview' && 'Báo Cáo Hoạt Động & Sơ Đồ Hệ Sinh Thái'}
+            {activeSection === 'restaurants' && 'Danh Sách Đối Tác Nhà Hàng & Thẩm Định Quán'}
+            {activeSection === 'sessions' && 'Bàn Ăn Ghép Đang Diễn Ra Toàn Hệ Thống'}
+            {activeSection === 'users' && 'Danh Sách Thành Viên & Hệ Thống Điểm Uy Tín 5.0★'}
+            {activeSection === 'moderation' && 'Tiếp Nhận & Xử Lý Khiếu Nại Bàn Ăn'}
+            {activeSection === 'vouchers' && 'Chiến Dịch Voucher Toàn Sàn Kích Cầu Bàn Trống'}
+            {activeSection === 'finance' && 'Đối Soát Doanh Số GMV & Hoa Hồng Nền Tảng'}
+          </h1>
         </div>
 
-        {/* 4 CORE KPI METRICS WITH GOURMET GLOW */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 pt-6 border-t border-slate-800/80">
-          <div className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10 backdrop-blur-xs">
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>Tổng Doanh Số Đặt Bàn</span>
-              <DollarSign className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="text-2xl font-black text-white">{formatCurrency(totalGMV)}</div>
-            <div className="text-[11px] text-emerald-400 font-bold mt-1 flex items-center gap-1">
-              <span>↑ +24.8%</span>
-              <span className="text-slate-400 font-normal">so với tuần trước</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10 backdrop-blur-xs">
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>Hoa Hồng Sàn Thực Thu (10%)</span>
-              <Percent className="w-4 h-4 text-amber-400" />
-            </div>
-            <div className="text-2xl font-black text-amber-400">{formatCurrency(platformRevenue)}</div>
-            <div className="text-[11px] text-amber-300 font-semibold mt-1">
-              Take-rate trung bình 10%
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10 backdrop-blur-xs">
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>Bàn Ghép Hoàn Tất</span>
-              <UtensilsCrossed className="w-4 h-4 text-brand-400" />
-            </div>
-            <div className="text-2xl font-black text-white">{totalCompletedSessions + 248} bàn</div>
-            <div className="text-[11px] text-teal-400 font-semibold mt-1">
-              96.4% thực khách hài lòng
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10 backdrop-blur-xs">
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>Đối Tác & Khách Hoạt Động</span>
-              <Store className="w-4 h-4 text-sky-400" />
-            </div>
-            <div className="text-2xl font-black text-white">{activeRestaurants} Quán • {users.length + 1280} Khách</div>
-            <div className="text-[11px] text-sky-300 font-semibold mt-1 flex items-center gap-1">
-              <span>★ 4.9/5.0 Điểm uy tín TB</span>
-              {pendingRestaurants > 0 && (
-                <span className="text-amber-400">• {pendingRestaurants} quán chờ duyệt</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* FULL ADMIN TABS NAVIGATION */}
-      <div className="flex items-center justify-between border-b border-slate-200">
-        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 max-w-full">
+        {/* Global Action Buttons */}
+        <div className="flex items-center gap-2.5">
           <button
-            onClick={() => setActiveTab('overview')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'overview'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            onClick={() => setIsAddRestModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
           >
-            <TrendingUp className="w-4 h-4" />
-            <span>Tổng Quan Hệ Thống</span>
+            <Plus className="w-3.5 h-3.5 text-amber-400" />
+            <span>Thêm Quán Ăn Mới</span>
           </button>
-
           <button
-            onClick={() => setActiveTab('restaurants')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'restaurants'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            onClick={() => setIsAddCampaignModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all"
           >
-            <Store className="w-4 h-4" />
-            <span>Quản Lý Nhà Hàng ({restaurants.length})</span>
-            {pendingRestaurants > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-black animate-pulse">
-                {pendingRestaurants} mới
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('sessions')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'sessions'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Utensils className="w-4 h-4" />
-            <span>Bàn Ăn Ghép ({sessions.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'users'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Thành Viên & Uy Tín ({users.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('moderation')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'moderation'
-                ? 'border-rose-600 text-rose-600'
-                : 'border-transparent text-slate-500 hover:text-rose-600'
-            }`}
-          >
-            <ShieldAlert className="w-4 h-4 text-rose-500" />
-            <span>Khiếu Nại & An Toàn ({reports.length})</span>
-            {pendingReportsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-black animate-bounce">
-                {pendingReportsCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('vouchers')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'vouchers'
-                ? 'border-brand-600 text-brand-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Tag className="w-4 h-4" />
-            <span>Voucher Toàn Sàn ({campaigns.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('finance')}
-            className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'finance'
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-slate-500 hover:text-emerald-700'
-            }`}
-          >
-            <DollarSign className="w-4 h-4" />
-            <span>Tài Chính & Đối Soát</span>
+            <Gift className="w-3.5 h-3.5" />
+            <span>Tạo Voucher Sàn</span>
           </button>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: OVERVIEW & SYSTEM HEALTH */}
+      {/* TAB 1: OVERVIEW & DETAILED METRICS + DIAGRAMS */}
       {/* ========================================================================= */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Action Alerts Banner */}
+      {activeSection === 'overview' && (
+        <div className="space-y-7">
+          
+          {/* Action Alerts Banner if pending restaurants or reports exist */}
           {(pendingRestaurants > 0 || pendingReportsCount > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {pendingRestaurants > 0 && (
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 shadow-xs">
+                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 shadow-sm flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="w-3 h-3 rounded-full bg-amber-500 animate-ping flex-shrink-0" />
                     <span className="text-xs text-amber-950 font-bold">
-                      Có <strong>{pendingRestaurants} quán ăn mới</strong> vừa nộp hồ sơ chờ Ban Quản Trị thẩm định.
+                      Có <strong>{pendingRestaurants} quán ăn mới</strong> vừa nộp hồ sơ chờ thẩm định.
                     </span>
                   </div>
                   <button
-                    onClick={() => setActiveTab('restaurants')}
-                    className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shadow-xs whitespace-nowrap"
+                    onClick={() => onSectionChange && onSectionChange('restaurants')}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-xs whitespace-nowrap"
                   >
                     Duyệt ngay &rarr;
                   </button>
@@ -510,16 +367,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               )}
 
               {pendingReportsCount > 0 && (
-                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-3 shadow-xs">
+                <div className="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 shadow-sm flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0 animate-bounce" />
                     <span className="text-xs text-rose-950 font-bold">
-                      Có <strong>{pendingReportsCount} báo cáo vi phạm bàn ăn</strong> cần Admin can thiệp xử lý.
+                      Có <strong>{pendingReportsCount} khiếu nại bàn ăn</strong> cần Admin can thiệp xử lý.
                     </span>
                   </div>
                   <button
-                    onClick={() => setActiveTab('moderation')}
-                    className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-xs whitespace-nowrap"
+                    onClick={() => onSectionChange && onSectionChange('moderation')}
+                    className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-xs whitespace-nowrap"
                   >
                     Xử lý &rarr;
                   </button>
@@ -528,122 +385,369 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           )}
 
-          {/* GOURMET CATEGORY BREAKDOWN & SYSTEM PERFORMANCE */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-brand-600" />
-                  <span>Cơ Cấu Món Ăn Được Ghép Bàn Nhiều Nhất</span>
-                </h3>
-                <span className="text-[11px] text-slate-400">Dữ liệu thời gian thực</span>
+          {/* 4 HIGH-IMPACT GOURMET KPI STAT CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            {/* KPI 1 */}
+            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400" />
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
+                  <span>Tổng GMV Đặt Bàn (Tháng này)</span>
+                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight mt-1">
+                  {formatCurrency(totalGMV)}
+                </div>
               </div>
-              <div className="space-y-3.5 pt-2 text-xs">
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span className="flex items-center gap-1.5">🍲 Lẩu Trung Hoa, Lẩu Nấm, Lẩu Bò</span>
-                    <span className="text-brand-600 font-bold">48% lượt ghép</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                    <div className="bg-brand-500 h-2.5 rounded-full" style={{ width: '48%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span className="flex items-center gap-1.5">🥩 Nướng BBQ Hàn Quốc & Than Hoa</span>
-                    <span className="text-amber-600 font-bold">26% lượt ghép</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                    <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: '26%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span className="flex items-center gap-1.5">🦪 Ốc & Hải Sản Sài Gòn Lai Rai</span>
-                    <span className="text-sky-600 font-bold">16% lượt ghép</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                    <div className="bg-sky-500 h-2.5 rounded-full" style={{ width: '16%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between font-semibold mb-1">
-                    <span className="flex items-center gap-1.5">🍱 Ẩm Thực Nhật Bản & Cơm Niêu</span>
-                    <span className="text-emerald-600 font-bold">10% lượt ghép</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                    <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: '10%' }}></div>
-                  </div>
-                </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-emerald-600 font-extrabold flex items-center gap-0.5">
+                  <ArrowUpRight className="w-3.5 h-3.5" /> +24.8% tuần qua
+                </span>
+                <span className="text-slate-400 font-medium">100% qua Chạm Đũa Pay</span>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Chỉ Số An Toàn & Vận Hành Bàn Ăn</span>
-                </h3>
-                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                  Hoạt động xuất sắc
-                </span>
+            {/* KPI 2 */}
+            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 to-amber-400" />
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
+                  <span>Hoa Hồng Sàn Thực Thu (10%)</span>
+                  <div className="p-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+                    <Percent className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-2xl lg:text-3xl font-black text-amber-600 tracking-tight mt-1">
+                  {formatCurrency(platformRevenue)}
+                </div>
               </div>
-              <div className="space-y-3 pt-1 text-xs">
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-800">Tỷ lệ thực khách xác thực hồ sơ (&gt;80%)</span>
-                    <p className="text-[11px] text-slate-500">Giúp ghép bạn ăn có gu tương đồng và uy tín</p>
-                  </div>
-                  <span className="text-sm font-black text-emerald-600">92.8%</span>
-                </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-slate-600 font-bold">Đã thu: {formatCurrency(Math.round(platformRevenue * 0.8))}</span>
+                <span className="text-amber-600 font-bold">Chờ kỳ: 20%</span>
+              </div>
+            </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-800">Thời gian nhà hàng phản hồi đơn chốt bàn</span>
-                    <p className="text-[11px] text-slate-500">Từ lúc khách chốt bàn đến khi nhận xác nhận</p>
+            {/* KPI 3 */}
+            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-500 to-amber-500" />
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
+                  <span>Bàn Ghép Thành Công</span>
+                  <div className="p-2 rounded-xl bg-brand-50 text-brand-600 border border-brand-200">
+                    <UtensilsCrossed className="w-4 h-4" />
                   </div>
-                  <span className="text-sm font-black text-brand-600">3.4 phút</span>
                 </div>
+                <div className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight mt-1">
+                  {totalCompletedSessions + 248} bàn
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-teal-600 font-extrabold">96.4% không bùng hẹn</span>
+                <span className="text-slate-500 font-bold">TB: 4.2 khách/bàn</span>
+              </div>
+            </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-800">Tỷ lệ thanh toán chia bill sòng phẳng</span>
-                    <p className="text-[11px] text-slate-500">Không có tranh chấp tài chính bàn ăn</p>
+            {/* KPI 4 */}
+            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 to-blue-500" />
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
+                  <span>Cộng Đồng & Đối Tác</span>
+                  <div className="p-2 rounded-xl bg-sky-50 text-sky-600 border border-sky-200">
+                    <Users className="w-4 h-4" />
                   </div>
-                  <span className="text-sm font-black text-emerald-600">99.4%</span>
                 </div>
+                <div className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight mt-1">
+                  {users.length + 1280} Khách
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-sky-700 font-bold">{activeRestaurants} quán đối tác</span>
+                <span className="text-amber-500 font-black">★ 4.9 Trust TB</span>
               </div>
             </div>
           </div>
 
-          {/* TOP 3 RESTAURANTS SPOTLIGHT */}
-          <div className="space-y-3">
+          {/* SƠ ĐỒ 1: BIỂU ĐỒ TĂNG TRƯỞNG DOANH THU 7 NGÀY GẦN NHẤT (SVG BAR CHART) */}
+          <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <BarChart2 className="w-5 h-5 text-brand-600" />
+                  <h3 className="font-black text-base text-slate-900">
+                    Sơ Đồ Doanh Số & Lượng Bàn Ăn Ghép 7 Ngày Qua
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Phân tích chu kỳ đặt bàn trong tuần: Thứ Sáu & Thứ Bảy là 2 ngày bùng nổ công suất lẩu nướng
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs font-bold">
+                <span className="flex items-center gap-1.5 text-slate-600">
+                  <span className="w-3 h-3 rounded-md bg-gradient-to-t from-brand-600 to-amber-400" />
+                  Doanh số GMV
+                </span>
+                <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
+                  🔥 Cuối tuần cao điểm (+85%)
+                </span>
+              </div>
+            </div>
+
+            {/* Interactive SVG / Bar Graph */}
+            <div className="pt-4 pb-2">
+              <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end h-56 pt-6 px-2 border-b-2 border-slate-200">
+                {revenue7Days.map((item, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
+                    {/* Tooltip on hover */}
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-slate-900 text-white px-2 py-1 rounded-lg font-black whitespace-nowrap shadow-md mb-1 pointer-events-none">
+                      {formatCurrency(item.gmv)} • {item.tables} bàn
+                    </div>
+
+                    {/* Bar column */}
+                    <div className="w-full max-w-[56px] bg-slate-100 rounded-t-2xl p-1 flex items-end h-full">
+                      <div
+                        className={`w-full rounded-t-xl transition-all duration-500 group-hover:brightness-110 shadow-sm ${
+                          item.isPeak
+                            ? 'bg-gradient-to-t from-brand-600 via-amber-500 to-amber-400'
+                            : 'bg-gradient-to-t from-slate-700 to-slate-500'
+                        }`}
+                        style={{ height: `${item.heightPercent}%` }}
+                      />
+                    </div>
+
+                    {/* Date label */}
+                    <div className="text-center mt-2">
+                      <span className={`block text-xs font-black ${item.isPeak ? 'text-brand-600' : 'text-slate-800'}`}>
+                        {item.day}
+                      </span>
+                      <span className="text-[10px] text-slate-400">{item.date}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-500 block">Doanh số trung bình ngày thường:</span>
+                <strong className="text-slate-900 text-sm font-black">17.975.000đ / ngày</strong>
+              </div>
+              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200">
+                <span className="text-amber-800 block">Doanh số trung bình cuối tuần:</span>
+                <strong className="text-amber-950 text-sm font-black">34.900.000đ / ngày</strong>
+              </div>
+              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200">
+                <span className="text-emerald-800 block">Tỷ lệ lấp đầy bàn tiệc TB:</span>
+                <strong className="text-emerald-950 text-sm font-black">89.2% công suất bàn lớn</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* SƠ ĐỒ 2: SƠ ĐỒ PHỄU GOM BÀN ĂN & DONUT CHART THỂ LOẠI MÓN */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* SƠ ĐỒ PHỄU (FUNNEL DIAGRAM) */}
+            <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-brand-600" />
+                  <h3 className="font-black text-sm sm:text-base text-slate-900">
+                    Sơ Đồ Phễu Chuyển Đổi Ghép Bàn Ăn
+                  </h3>
+                </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Hiệu quả 96.4%
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Quy trình từ lúc thực khách tạo phòng gom khách đến khi ăn xong và thanh toán
+              </p>
+
+              {/* 4-Step Funnel visualization */}
+              <div className="space-y-3 pt-2 text-xs">
+                {/* Step 1 */}
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center text-xs">
+                      1
+                    </span>
+                    <div>
+                      <strong className="text-slate-900 block">Khởi Tạo Phòng Kèo Ăn</strong>
+                      <span className="text-[11px] text-slate-500">Chọn quán ăn, giờ hẹn & số người</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-black text-slate-900">412 bàn</span>
+                    <span className="block text-[10px] text-slate-400">100% gốc</span>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs">
+                      2
+                    </span>
+                    <div>
+                      <strong className="text-slate-900 block">Gom Đủ Khách & Đồng Thuận</strong>
+                      <span className="text-[11px] text-slate-500">Các thành viên chat & bấm sẵn sàng</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-black text-amber-900">354 bàn</span>
+                    <span className="block text-[10px] text-amber-700 font-bold">85.9% đạt chỉ tiêu</span>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="p-3 rounded-2xl bg-brand-50/60 border border-brand-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-xl bg-brand-600 text-white font-black flex items-center justify-center text-xs">
+                      3
+                    </span>
+                    <div>
+                      <strong className="text-slate-900 block">Nhà Hàng Tiếp Nhận & Giữ Bàn</strong>
+                      <span className="text-[11px] text-slate-500">Xác nhận đơn qua Kênh Đối Tác</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-black text-brand-700">334 bàn</span>
+                    <span className="block text-[10px] text-brand-600 font-bold">81.1% giữ bàn thành công</span>
+                  </div>
+                </div>
+
+                {/* Step 4 */}
+                <div className="p-3 rounded-2xl bg-emerald-50 border-2 border-emerald-300 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-xs">
+                      4
+                    </span>
+                    <div>
+                      <strong className="text-emerald-950 block">Ăn Xong & Chia Bill Sòng Phẳng</strong>
+                      <span className="text-[11px] text-emerald-700 font-medium">Thanh toán trọn vẹn, không bùng tiền</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-base font-black text-emerald-700">332 bàn</span>
+                    <span className="block text-[10px] text-emerald-800 font-black">99.4% hoàn hảo</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SƠ ĐỒ DONUT & KHUNG GIỜ CAO ĐIỂM */}
+            <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <PieChart className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-black text-sm sm:text-base text-slate-900">
+                    Cơ Cấu Món Ăn & Khung Giờ Cao Điểm
+                  </h3>
+                </div>
+                <span className="text-[11px] font-bold text-slate-400">Thời gian thực</span>
+              </div>
+
+              {/* Category Breakdown Bars */}
+              <div className="space-y-3 pt-1 text-xs">
+                <div>
+                  <div className="flex justify-between font-black mb-1 text-slate-800">
+                    <span className="flex items-center gap-1.5">🍲 Lẩu Trung Hoa, Lẩu Nấm, Lẩu Bò</span>
+                    <span className="text-brand-600">48% (160 bàn)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div className="bg-brand-500 h-3 rounded-full" style={{ width: '48%' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-black mb-1 text-slate-800">
+                    <span className="flex items-center gap-1.5">🥩 Nướng Than Hoa & BBQ Hàn Quốc</span>
+                    <span className="text-amber-600">26% (87 bàn)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div className="bg-amber-500 h-3 rounded-full" style={{ width: '26%' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-black mb-1 text-slate-800">
+                    <span className="flex items-center gap-1.5">🦪 Ốc Sài Gòn & Hải Sản Tươi Sống</span>
+                    <span className="text-sky-600">16% (53 bàn)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div className="bg-sky-500 h-3 rounded-full" style={{ width: '16%' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-black mb-1 text-slate-800">
+                    <span className="flex items-center gap-1.5">🍱 Ẩm Thực Nhật Bản & Cơm Niêu</span>
+                    <span className="text-emerald-600">10% (34 bàn)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div className="bg-emerald-500 h-3 rounded-full" style={{ width: '10%' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Peak Hours Traffic Heatmap */}
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5">
+                <span className="text-xs font-black text-slate-900 block">
+                  Tỷ Lệ Lấp Đầy Theo Khung Giờ Ăn:
+                </span>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200">
+                    <span className="text-[10px] text-amber-800 block font-semibold">Trưa văn phòng</span>
+                    <strong className="text-sm font-black text-amber-950">11h30 - 13h30</strong>
+                    <span className="block text-[10px] text-amber-700 font-bold mt-0.5">88% lấp đầy</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-2xl bg-brand-50 border border-brand-200">
+                    <span className="text-[10px] text-brand-800 block font-semibold">Tối tan ca (Vàng)</span>
+                    <strong className="text-sm font-black text-brand-950">18h00 - 20h30</strong>
+                    <span className="block text-[10px] text-brand-700 font-bold mt-0.5">96% lấp đầy 🔥</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-2xl bg-slate-100 border border-slate-200">
+                    <span className="text-[10px] text-slate-600 block font-semibold">Khuya lai rai</span>
+                    <strong className="text-sm font-black text-slate-900">21h00 - 23h30</strong>
+                    <span className="block text-[10px] text-slate-600 font-bold mt-0.5">74% lấp đầy</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* TOP 3 RESTAURANTS HIGH-CONTRAST GOURMET CARDS */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
                   <Award className="w-5 h-5 text-amber-500" />
-                  <span>Top Đối Tác Nhà Hàng Doanh Thu Dẫn Đầu Tháng Này</span>
+                  <span>Bảng Vinh Danh Top Đối Tác Nhà Hàng Doanh Số Cao Nhất</span>
                 </h3>
-                <p className="text-xs text-slate-500">Các đối tác F&B xuất sắc đón nhiều nhóm khách ghép nhất trên Chạm Đũa</p>
+                <p className="text-xs text-slate-500">Các đối tác ẩm thực đón nhiều nhóm khách gom nhất trên Chạm Đũa</p>
               </div>
               <button
-                onClick={() => setActiveTab('restaurants')}
-                className="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1"
+                onClick={() => onSectionChange && onSectionChange('restaurants')}
+                className="text-xs font-black text-brand-600 hover:text-brand-700 flex items-center gap-1"
               >
-                <span>Xem tất cả quán</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <span>Xem tất cả quán ăn</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {restaurants.slice(0, 3).map((r, idx) => (
                 <div
                   key={r.id}
                   onClick={() => setSelectedRestDetail(r)}
-                  className="group bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between"
+                  className="group bg-white rounded-3xl border-2 border-slate-200/90 hover:border-brand-500 overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between"
                 >
                   <div className="relative h-44 overflow-hidden">
                     <img
@@ -651,15 +755,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       alt={r.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                     
                     {/* Badge rank */}
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                      <span className="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md">
+                    <div className="absolute top-3 left-3 flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md">
                         #{idx + 1}
                       </span>
                       {r.badge && (
-                        <span className="px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-md text-amber-300 border border-amber-500/30 text-[10px] font-black uppercase">
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase">
                           💎 {r.badge}
                         </span>
                       )}
@@ -669,44 +773,45 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wide">
                         {r.category}
                       </span>
-                      <h4 className="font-black text-sm text-white truncate drop-shadow-sm">{r.name}</h4>
+                      <h4 className="font-black text-base text-white truncate drop-shadow-sm">{r.name}</h4>
                     </div>
                   </div>
 
                   <div className="p-4 space-y-3">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500">Doanh thu sàn:</span>
-                      <span className="font-black text-emerald-600">
+                      <span className="text-slate-500 font-semibold">Doanh thu sàn:</span>
+                      <span className="font-black text-emerald-600 text-sm">
                         {formatCurrency(r.monthlyRevenue || 65000000)}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-                      <span className="text-slate-500">Hoa hồng sàn ({r.commissionRate || 10}%):</span>
-                      <span className="font-bold text-amber-600">
+                      <span className="text-slate-500 font-semibold">Hoa hồng sàn ({r.commissionRate || 10}%):</span>
+                      <span className="font-black text-amber-600">
                         {formatCurrency(Math.round((r.monthlyRevenue || 65000000) * ((r.commissionRate || 10) / 100)))}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                      <span>★ {r.rating} ({r.reviewCount} đánh giá)</span>
-                      <span className="text-brand-600 font-bold group-hover:underline">Chi tiết &rarr;</span>
+                      <span className="font-bold text-amber-600">★ {r.rating} ({r.reviewCount} đánh giá)</span>
+                      <span className="text-brand-600 font-black group-hover:underline">Chi tiết menu &rarr;</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: RESTAURANTS MANAGEMENT (CARDS BẮT MẮT & ĐẦY ĐỦ TÍNH NĂNG) */}
+      {/* TAB 2: RESTAURANTS MANAGEMENT (HIGH-CONTRAST GOURMET CARDS) */}
       {/* ========================================================================= */}
-      {activeTab === 'restaurants' && (
+      {activeSection === 'restaurants' && (
         <div className="space-y-6">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="bg-white p-4 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="relative w-full md:w-80">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
@@ -714,7 +819,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 placeholder="Tìm nhà hàng theo tên, món ăn, địa chỉ..."
                 value={restSearchQuery}
                 onChange={(e) => setRestSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-2xl border border-slate-200 text-xs focus:outline-none focus:border-brand-500"
+                className="w-full pl-9 pr-4 py-2 rounded-2xl border border-slate-300 text-xs focus:outline-none focus:border-brand-500 font-medium"
               />
             </div>
 
@@ -726,7 +831,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                     restStatusFilter === status
                       ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
                   {status === 'ALL' && 'Tất cả đối tác'}
@@ -746,7 +851,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
 
-          {/* RESTAURANTS CARDS GRID */}
+          {/* RESTAURANTS CARDS GRID WITH HIGH CONTRAST */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredRestaurants.map((rest) => {
               const status = rest.status || (rest.isRegisteredOnSystem ? 'ACTIVE' : 'PENDING');
@@ -756,12 +861,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               return (
                 <div
                   key={rest.id}
-                  className={`group bg-white rounded-3xl border overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between ${
+                  className={`group bg-white rounded-3xl border-2 overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl transition-all duration-300 flex flex-col justify-between ${
                     isPending
-                      ? 'border-amber-300 ring-2 ring-amber-200/60'
+                      ? 'border-amber-400 ring-4 ring-amber-100'
                       : isLocked
-                      ? 'border-rose-200 opacity-80'
-                      : 'border-slate-200'
+                      ? 'border-rose-300 opacity-80'
+                      : 'border-slate-200/90 hover:border-brand-500'
                   }`}
                 >
                   {/* Photo & Badges */}
@@ -771,13 +876,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       alt={rest.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                     
                     {/* Top status badges */}
                     <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white shadow-md ${
                         isPending
-                          ? 'bg-amber-500 animate-pulse'
+                          ? 'bg-amber-500 animate-pulse text-slate-950 font-black'
                           : isLocked
                           ? 'bg-rose-600'
                           : 'bg-emerald-600'
@@ -801,7 +906,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wide">
                         {rest.category}
                       </span>
-                      <h3 className="text-sm sm:text-base font-black truncate drop-shadow-sm">{rest.name}</h3>
+                      <h3 className="text-base font-black truncate drop-shadow-sm">{rest.name}</h3>
                     </div>
                   </div>
 
@@ -810,12 +915,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <div className="space-y-2 text-xs">
                       <div className="flex items-center gap-1.5 text-slate-700">
                         <MapPin className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
-                        <span className="truncate">{rest.address}</span>
+                        <span className="truncate font-medium">{rest.address}</span>
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] text-slate-500">
                         <span>Hotline: <strong>{rest.phone}</strong></span>
-                        <span className="font-bold text-amber-600 flex items-center gap-1">
+                        <span className="font-black text-amber-600 flex items-center gap-1">
                           ★ {rest.rating} ({rest.reviewCount})
                         </span>
                       </div>
@@ -824,7 +929,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       {rest.featuredDishes && rest.featuredDishes.length > 0 && (
                         <div className="flex flex-wrap gap-1 pt-1">
                           {rest.featuredDishes.slice(0, 3).map((dish, i) => (
-                            <span key={i} className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[10px] font-medium border border-amber-200">
+                            <span key={i} className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 text-[10px] font-bold border border-amber-200">
                               {dish}
                             </span>
                           ))}
@@ -832,16 +937,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       )}
 
                       {/* Revenue & Commission stats */}
-                      <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 gap-2 text-[11px]">
                         <div>
-                          <span className="text-slate-400 block">Doanh số sàn:</span>
-                          <span className="font-black text-slate-900">
+                          <span className="text-slate-400 block text-[10px]">Doanh số sàn:</span>
+                          <span className="font-black text-slate-900 text-xs">
                             {formatCurrency(rest.monthlyRevenue || 45000000)}
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block">Hoa hồng sàn:</span>
-                          <span className="font-black text-amber-600">
+                          <span className="text-slate-400 block text-[10px]">Hoa hồng sàn:</span>
+                          <span className="font-black text-amber-700 text-xs">
                             {rest.commissionRate || 10}% Commission
                           </span>
                         </div>
@@ -862,7 +967,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <>
                           <button
                             onClick={() => setSelectedRestDetail(rest)}
-                            className="flex-1 py-1.5 px-2.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center gap-1 transition-colors"
+                            className="flex-1 py-1.5 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1 transition-colors shadow-xs"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>Xem Menu & Chi Tiết</span>
@@ -873,7 +978,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             className={`p-2 rounded-xl text-xs font-bold transition-colors border ${
                               isLocked
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                : 'bg-slate-50 text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200'
+                                : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300'
                             }`}
                             title={isLocked ? 'Mở khóa quán' : 'Tạm khóa quán'}
                           >
@@ -884,7 +989,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                       <button
                         onClick={() => handleDeleteRestaurant(rest.id)}
-                        className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-200"
                         title="Xóa đối tác"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -899,12 +1004,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: DINING SESSIONS MONITORING (GIÁM SÁT BÀN ĂN GHÉP TOÀN SÀN) */}
+      {/* TAB 3: DINING SESSIONS MONITORING (BÀN ĂN GHÉP TOÀN SÀN) */}
       {/* ========================================================================= */}
-      {activeTab === 'sessions' && (
+      {activeSection === 'sessions' && (
         <div className="space-y-6">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="bg-white p-4 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
@@ -912,7 +1017,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 placeholder="Tìm theo quán, người khởi xướng, món..."
                 value={sessionSearchQuery}
                 onChange={(e) => setSessionSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-2xl border border-slate-200 text-xs focus:outline-none focus:border-brand-500"
+                className="w-full pl-9 pr-4 py-2 rounded-2xl border border-slate-300 text-xs focus:outline-none focus:border-brand-500 font-medium"
               />
             </div>
 
@@ -921,16 +1026,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   key={st}
                   onClick={() => setSessionStatusFilter(st)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                     sessionStatusFilter === st
                       ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
                   {st === 'ALL' && 'Tất cả bàn'}
-                  {st === 'RECRUITING' && 'Đang tuyển người'}
+                  {st === 'RECRUITING' && 'Đang gom khách'}
                   {st === 'LOCKED' && 'Đã chốt gửi quán'}
-                  {st === 'COMPLETED' && 'Đã ăn & thanh toán'}
+                  {st === 'COMPLETED' && 'Đã hoàn tất'}
                   {st === 'CANCELLED' && 'Đã hủy'}
                 </button>
               ))}
@@ -942,7 +1047,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {filteredSessions.map((session) => (
               <div
                 key={session.id}
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl transition-all flex flex-col justify-between space-y-4"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3">
@@ -950,11 +1055,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <img
                         src={session.restaurantImage}
                         alt={session.restaurantName}
-                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-sm"
+                        className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-200 shadow-sm"
                       />
                       <div>
                         <h4 className="font-black text-sm text-slate-900">{session.title}</h4>
-                        <span className="text-xs font-semibold text-brand-600">{session.restaurantName}</span>
+                        <span className="text-xs font-bold text-brand-600">{session.restaurantName}</span>
                       </div>
                     </div>
 
@@ -974,7 +1079,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-200">
                     <div>
                       <span className="text-slate-400 block text-[10px]">Giờ hẹn ăn:</span>
                       <strong className="text-slate-800">{session.eatingTime}</strong>
@@ -1008,7 +1113,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
                   <div>
                     <span className="text-[10px] text-slate-400 block">Tổng hóa đơn bàn:</span>
-                    <span className="font-black text-slate-900">
+                    <span className="font-black text-slate-900 text-sm">
                       {formatCurrency(session.paymentInfo?.totalAmount || 850000)}
                     </span>
                   </div>
@@ -1022,12 +1127,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             setSessions(storageService.getSessions());
                           }
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold transition-colors"
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 text-xs font-bold transition-colors border border-slate-200"
                       >
                         Hủy Bàn
                       </button>
                     )}
-                    <span className="text-[11px] text-emerald-600 font-bold px-2 py-1 bg-emerald-50 rounded-xl">
+                    <span className="text-[11px] text-emerald-700 font-bold px-2.5 py-1 bg-emerald-50 rounded-xl border border-emerald-200">
                       {session.reservationStatus === 'CONFIRMED_BY_RESTAURANT' ? 'Quán đã giữ bàn' : 'Chờ xác nhận'}
                     </span>
                   </div>
@@ -1039,12 +1144,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: USERS & TRUST SCORE (QUẢN LÝ THỰC KHÁCH & UY TÍN) */}
+      {/* TAB 4: USERS & TRUST SCORE (CARD NỔI BẬT KHÔNG BỊ TỆP VỚI NỀN) */}
       {/* ========================================================================= */}
-      {activeTab === 'users' && (
+      {activeSection === 'users' && (
         <div className="space-y-6">
           {/* User Filter Bar */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="bg-white p-4 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
@@ -1052,7 +1157,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 placeholder="Tìm theo tên, email, nghề nghiệp..."
                 value={userSearchQuery}
                 onChange={(e) => setUserSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-2xl border border-slate-200 text-xs focus:outline-none focus:border-brand-500"
+                className="w-full pl-9 pr-4 py-2 rounded-2xl border border-slate-300 text-xs focus:outline-none focus:border-brand-500 font-medium"
               />
             </div>
 
@@ -1061,10 +1166,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   key={tier}
                   onClick={() => setUserTrustFilter(tier)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                     userTrustFilter === tier
                       ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
                   {tier === 'ALL' && 'Tất cả thành viên'}
@@ -1077,120 +1182,155 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
 
-          {/* User Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.map((user) => (
-              <div
-                key={user.id}
-                className={`bg-white p-5 rounded-3xl border transition-all flex flex-col justify-between space-y-4 shadow-xs hover:shadow-md ${
-                  user.isLocked ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200'
-                }`}
-              >
-                <div>
-                  <div className="flex items-start gap-3.5">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-12 h-12 rounded-2xl object-cover border-2 border-brand-200 shadow-xs flex-shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-black text-sm text-slate-900 truncate">{user.name}</h4>
-                        {user.isLocked && (
-                          <span className="px-1.5 py-0.2 bg-rose-600 text-white text-[9px] font-black rounded">
-                            LOCKED
+          {/* User Cards Grid with High Visual Contrast */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredUsers.map((user) => {
+              const isVIP = user.trustScore === 5.0;
+              const isWarning = user.trustScore < 4.5;
+
+              return (
+                <div
+                  key={user.id}
+                  className={`bg-white rounded-3xl border-2 transition-all flex flex-col justify-between overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-2xl hover:-translate-y-0.5 ${
+                    user.isLocked
+                      ? 'border-rose-400 ring-2 ring-rose-100'
+                      : isVIP
+                      ? 'border-amber-300 hover:border-amber-400'
+                      : isWarning
+                      ? 'border-rose-300'
+                      : 'border-slate-200/90 hover:border-brand-500'
+                  }`}
+                >
+                  {/* Card top accent stripe */}
+                  <div className={`h-2 w-full ${
+                    user.isLocked
+                      ? 'bg-rose-600'
+                      : isVIP
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+                      : isWarning
+                      ? 'bg-rose-400'
+                      : 'bg-gradient-to-r from-brand-500 to-amber-400'
+                  }`} />
+
+                  <div className="p-5 space-y-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="relative">
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-13 h-13 rounded-2xl object-cover border-2 border-white shadow-md flex-shrink-0"
+                        />
+                        {isVIP && (
+                          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-xs">
+                            ★
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 truncate">{user.occupation || user.email}</p>
-                      <span className="inline-block mt-0.5 text-[10px] font-bold text-brand-600">
-                        {user.companyOrSchool || 'Thành viên Chạm Đũa'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Trust Score & Profile Progress */}
-                  <div className="mt-4 p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500">Điểm Uy Tín (Trust Score):</span>
-                      <span className="font-black text-amber-500 flex items-center gap-1">
-                        ★ {user.trustScore.toFixed(1)} / 5.0
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`h-2 rounded-full ${
-                          user.trustScore >= 4.5 ? 'bg-amber-400' : user.trustScore >= 3.5 ? 'bg-amber-500' : 'bg-rose-500'
-                        }`}
-                        style={{ width: `${(user.trustScore / 5.0) * 100}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-                      <span>Bữa ăn đã ghép: <strong>{user.totalMealsJoined}</strong></span>
-                      <span>Hồ sơ: <strong>{user.profileCompletionPercent || 100}%</strong></span>
-                    </div>
-                  </div>
-
-                  {/* Smart Food Tags */}
-                  {user.smartTags && user.smartTags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      {user.smartTags.slice(0, 3).map((tag, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium">
-                          #{tag}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-black text-sm text-slate-900 truncate">{user.name}</h4>
+                          {user.isLocked ? (
+                            <span className="px-2 py-0.5 bg-rose-600 text-white text-[9px] font-black rounded-md">
+                              ĐÃ KHÓA
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-black rounded-md">
+                              ĐÃ XÁC THỰC
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-600 font-medium truncate mt-0.5">{user.occupation || user.email}</p>
+                        <span className="inline-block mt-0.5 text-[10px] font-bold text-brand-600">
+                          {user.companyOrSchool || 'Thành viên Chạm Đũa'}
                         </span>
-                      ))}
+                      </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Trust score adjustment tools */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs">
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleAdjustTrust(user, 0.1)}
-                      className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px]"
-                      title="Cộng thưởng điểm uy tín"
-                    >
-                      +0.1★
-                    </button>
-                    <button
-                      onClick={() => handleAdjustTrust(user, -0.2)}
-                      className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px]"
-                      title="Trừ điểm uy tín (vi phạm)"
-                    >
-                      -0.2★
-                    </button>
+                    {/* Trust Score & Profile Progress with High Contrast */}
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600 font-bold">Điểm Uy Tín (Trust Score):</span>
+                        <span className="font-black text-amber-500 text-sm flex items-center gap-1">
+                          ★ {user.trustScore.toFixed(1)} / 5.0
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className={`h-2.5 rounded-full ${
+                            user.trustScore >= 4.5 ? 'bg-amber-400' : user.trustScore >= 3.5 ? 'bg-amber-500' : 'bg-rose-500'
+                          }`}
+                          style={{ width: `${(user.trustScore / 5.0) * 100}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 font-medium">
+                        <span>Bữa ăn đã ghép: <strong className="text-slate-800">{user.totalMealsJoined}</strong></span>
+                        <span>Hồ sơ: <strong className="text-slate-800">{user.profileCompletionPercent || 100}%</strong></span>
+                      </div>
+                    </div>
+
+                    {/* Smart Food Tags */}
+                    {user.smartTags && user.smartTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {user.smartTags.slice(0, 3).map((tag, i) => (
+                          <span key={i} className="px-2.5 py-0.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <button
-                    onClick={() => handleToggleUserLock(user)}
-                    className={`px-3 py-1 rounded-xl text-[11px] font-bold border transition-colors ${
-                      user.isLocked
-                        ? 'bg-emerald-600 text-white border-emerald-600'
-                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-rose-50 hover:text-rose-600'
-                    }`}
-                  >
-                    {user.isLocked ? 'Mở Khóa' : 'Khóa Tài Khoản'}
-                  </button>
+                  {/* Trust score adjustment tools */}
+                  <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleAdjustTrust(user, 0.1)}
+                        className="px-2.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-black text-[11px] border border-emerald-300 transition-colors shadow-xs"
+                        title="Thưởng +0.1 điểm uy tín"
+                      >
+                        +0.1★
+                      </button>
+                      <button
+                        onClick={() => handleAdjustTrust(user, -0.2)}
+                        className="px-2.5 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 font-black text-[11px] border border-rose-300 transition-colors shadow-xs"
+                        title="Trừ -0.2 điểm uy tín"
+                      >
+                        -0.2★
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => handleToggleUserLock(user)}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors shadow-xs ${
+                        user.isLocked
+                          ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                          : 'bg-white text-slate-700 border-slate-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'
+                      }`}
+                    >
+                      {user.isLocked ? 'Mở Khóa' : 'Khóa Tài Khoản'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 5: MODERATION & REPORTS (KHIẾU NẠI & AN TOÀN BÀN ĂN) */}
+      {/* TAB 5: MODERATION & REPORTS (REDESIGNED BOLD CONTRAST CARDS) */}
       {/* ========================================================================= */}
-      {activeTab === 'moderation' && (
+      {activeSection === 'moderation' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
             <div>
-              <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-rose-600" />
+              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-rose-600" />
                 <span>Trung Tâm Tiếp Nhận & Xử Lý Khiếu Nại Bàn Ăn</span>
               </h3>
-              <p className="text-xs text-slate-500">Giám sát các hành vi vi phạm quy tắc văn minh ghép bàn: bùng hẹn, chia bill thiếu sòng phẳng</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Bảo vệ thực khách và nhà hàng đối tác: xử lý bùng hẹn giờ chót, chia bill thiếu minh bạch
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1198,10 +1338,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   key={st}
                   onClick={() => setReportStatusFilter(st)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                     reportStatusFilter === st
                       ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
                   {st === 'ALL' && 'Tất cả'}
@@ -1213,62 +1353,68 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Reports List */}
+          {/* Reports List with Bold Left Stripe and High Contrast */}
           <div className="space-y-4">
             {filteredReports.map((report) => (
               <div
                 key={report.id}
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4"
+                className={`bg-white p-6 rounded-3xl border-2 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-4 border-l-8 ${
+                  report.severity === 'HIGH'
+                    ? 'border-l-rose-500 border-slate-200/90'
+                    : report.severity === 'MEDIUM'
+                    ? 'border-l-amber-500 border-slate-200/90'
+                    : 'border-l-sky-500 border-slate-200/90'
+                }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                    <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${
                       report.severity === 'HIGH'
-                        ? 'bg-rose-100 text-rose-700'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-300'
                         : report.severity === 'MEDIUM'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-slate-100 text-slate-700'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : 'bg-slate-100 text-slate-700 border border-slate-300'
                     }`}>
                       Mức độ: {report.severity}
                     </span>
-                    <span className="text-xs font-black text-slate-900">{report.reason}</span>
+                    <span className="text-sm font-black text-slate-900">{report.reason}</span>
                   </div>
 
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  <span className={`px-3 py-1 rounded-full text-xs font-black ${
                     report.status === 'PENDING'
-                      ? 'bg-amber-500 text-white animate-pulse'
+                      ? 'bg-amber-500 text-slate-950 animate-pulse'
                       : report.status === 'RESOLVED'
                       ? 'bg-emerald-100 text-emerald-800'
                       : 'bg-slate-100 text-slate-600'
                   }`}>
                     {report.status === 'PENDING' && '⚡ Chờ Admin Xử Lý'}
-                    {report.status === 'RESOLVED' && '✓ Đã Xử Lý Thành Công'}
+                    {report.status === 'RESOLVED' && '✓ Đã Giải Quyết'}
                     {report.status === 'DISMISSED' && '✕ Bác Khiếu Nại'}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <span className="text-slate-400 block text-[10px]">Người gửi khiếu nại:</span>
-                    <strong className="text-slate-800">{report.reporterName}</strong>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Thời gian: {report.createdAt}</p>
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-slate-400 block text-[10px] font-bold">Người gửi khiếu nại:</span>
+                    <strong className="text-slate-900 text-sm block mt-0.5">{report.reporterName}</strong>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Thời gian gửi: {report.createdAt}</p>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-rose-50/50 border border-rose-100">
-                    <span className="text-rose-400 block text-[10px]">Đối tượng bị phản ánh:</span>
-                    <strong className="text-rose-900">
+                  <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200">
+                    <span className="text-rose-500 block text-[10px] font-bold">Đối tượng bị phản ánh:</span>
+                    <strong className="text-rose-950 text-sm block mt-0.5">
                       {report.reportedUserName || report.reportedRestaurantName || 'Thành viên ghép bàn'}
                     </strong>
-                    <p className="text-[10px] text-rose-500 mt-0.5">Bàn tiệc liên quan: {report.sessionId || 'N/A'}</p>
+                    <p className="text-[10px] text-rose-600 mt-0.5">Mã bàn ăn liên quan: {report.sessionId || 'N/A'}</p>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-600 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100 leading-relaxed">
-                  <strong>Nội dung phản ánh:</strong> {report.detail}
+                <p className="text-xs text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-200 leading-relaxed font-medium">
+                  <strong className="text-slate-900">Chi tiết phản ánh:</strong> {report.detail}
                 </p>
 
                 {report.penaltyApplied && (
-                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2">
+                  <div className="p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-xs text-emerald-950 font-bold flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                     <span><strong>Kết quả xử lý:</strong> {report.penaltyApplied}</span>
                   </div>
@@ -1278,22 +1424,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2 text-xs">
                     <button
                       onClick={() => handleResolveReport(report, 'DISMISS')}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold"
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 transition-colors"
                     >
                       Bác Đơn (Không vi phạm)
                     </button>
                     <button
                       onClick={() => handleResolveReport(report, 'VOUCHER')}
-                      className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold flex items-center gap-1 shadow-xs"
+                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black flex items-center gap-1.5 shadow-sm transition-all"
                     >
-                      <Gift className="w-3.5 h-3.5" />
+                      <Gift className="w-4 h-4" />
                       <span>Đền Bù Voucher 50k</span>
                     </button>
                     <button
                       onClick={() => handleResolveReport(report, 'PENALTY')}
-                      className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black flex items-center gap-1 shadow-sm"
+                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black flex items-center gap-1.5 shadow-sm transition-all"
                     >
-                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <ShieldAlert className="w-4 h-4" />
                       <span>Trừ -0.5★ Uy Tín & Cảnh Cáo</span>
                     </button>
                   </div>
@@ -1305,17 +1451,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 6: VOUCHERS & PLATFORM CAMPAIGNS (VOUCHER TOÀN SÀN KÍCH CẦU) */}
+      {/* TAB 6: VOUCHERS & PLATFORM CAMPAIGNS */}
       {/* ========================================================================= */}
-      {activeTab === 'vouchers' && (
+      {activeSection === 'vouchers' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
             <div>
-              <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                <Gift className="w-4 h-4 text-amber-500" />
+              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                <Gift className="w-5 h-5 text-amber-500" />
                 <span>Chiến Dịch Voucher Toàn Sàn Chạm Đũa Tài Trợ</span>
               </h3>
-              <p className="text-xs text-slate-500">Mã ưu đãi nhóm do nền tảng Chạm Đũa trợ giá để kích cầu đặt bàn giờ thấp điểm</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Mã trợ giá bàn tiệc do nền tảng Chạm Đũa phát hành để kích cầu thực khách ghép bàn vào các khung giờ vàng
+              </p>
             </div>
 
             <button
@@ -1332,49 +1480,49 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {campaigns.map((camp) => (
               <div
                 key={camp.id}
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 relative overflow-hidden"
+                className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl transition-all flex flex-col justify-between space-y-4 relative overflow-hidden"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="font-mono text-sm font-black px-2.5 py-1 bg-amber-50 text-amber-900 rounded-xl border border-amber-300">
+                    <span className="font-mono text-sm font-black px-3 py-1 bg-amber-50 text-amber-900 rounded-xl border border-amber-300">
                       🎟️ {camp.code}
                     </span>
                     <h4 className="font-black text-base text-slate-900 mt-2.5">{camp.title}</h4>
-                    <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                    <span className="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full inline-block mt-1 border border-rose-200">
                       {camp.discount}
                     </span>
                   </div>
 
                   <button
                     onClick={() => handleToggleCampaign(camp.id)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors ${
+                    className={`px-3 py-1 rounded-xl text-xs font-black transition-colors ${
                       camp.status === 'ACTIVE'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-slate-100 text-slate-500'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : 'bg-slate-100 text-slate-500 border border-slate-300'
                     }`}
                   >
                     {camp.status === 'ACTIVE' ? 'Đang chạy' : 'Tạm dừng'}
                   </button>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 grid grid-cols-3 gap-2 text-[11px] text-slate-600">
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-3 gap-2 text-[11px] text-slate-700">
                   <div>
                     <span className="text-slate-400 block text-[10px]">Quy mô nhóm:</span>
-                    <strong>Từ {camp.minGroup} người</strong>
+                    <strong className="font-bold">Từ {camp.minGroup} người</strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px]">Đã sử dụng:</span>
-                    <strong className="text-brand-600">{camp.usedCount} lượt</strong>
+                    <strong className="text-brand-600 font-black">{camp.usedCount} lượt</strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px]">Hạn dùng:</span>
-                    <strong>{camp.expiry}</strong>
+                    <strong className="font-bold">{camp.expiry}</strong>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                  <span>Ngân sách tài trợ: <strong>{formatCurrency(camp.budget)}</strong></span>
-                  <span className="text-slate-400">Áp dụng: {camp.targetCategory || 'Tất cả'}</span>
+                  <span>Ngân sách tài trợ: <strong className="text-slate-900 font-bold">{formatCurrency(camp.budget)}</strong></span>
+                  <span className="text-slate-500 font-medium">Áp dụng: {camp.targetCategory || 'Tất cả'}</span>
                 </div>
               </div>
             ))}
@@ -1383,25 +1531,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 7: FINANCE & COMMISSION PAYOUTS (TÀI CHÍNH & ĐỐI SOÁT F&B) */}
+      {/* TAB 7: FINANCE & COMMISSION PAYOUTS */}
       {/* ========================================================================= */}
-      {activeTab === 'finance' && (
+      {activeSection === 'finance' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
             <div>
-              <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-emerald-600" />
+              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
                 <span>Bảng Đối Soát Doanh Thu & Hoa Hồng Nền Tảng Chạm Đũa</span>
               </h3>
-              <p className="text-xs text-slate-500">Giám sát dòng tiền thanh toán bàn ăn, trích xuất hoa hồng và chuyển khoản định kỳ cho đối tác</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Giám sát dòng tiền thanh toán bàn ăn, trích xuất hoa hồng và chuyển khoản định kỳ cho nhà hàng
+              </p>
             </div>
           </div>
 
           {/* Payouts Table */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]">
+                <thead className="bg-slate-50 border-b-2 border-slate-200 text-slate-600 uppercase tracking-wider text-[10px]">
                   <tr>
                     <th className="p-4 font-black">Đối Tác Nhà Hàng</th>
                     <th className="p-4 font-black">Kỳ Đối Soát</th>
@@ -1415,13 +1565,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {payouts.map((pay) => (
-                    <tr key={pay.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="p-4 font-bold text-slate-900">{pay.restaurantName}</td>
-                      <td className="p-4 text-slate-500">{pay.period}</td>
+                    <tr key={pay.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="p-4 font-black text-slate-900 text-sm">{pay.restaurantName}</td>
+                      <td className="p-4 text-slate-500 font-medium">{pay.period}</td>
                       <td className="p-4 font-black text-slate-900">{formatCurrency(pay.totalGMV)}</td>
-                      <td className="p-4 font-bold text-amber-600">{pay.commissionRate}%</td>
+                      <td className="p-4 font-black text-amber-600">{pay.commissionRate}%</td>
                       <td className="p-4 font-bold text-slate-900">{formatCurrency(pay.commissionFee)}</td>
-                      <td className="p-4 font-black text-emerald-600">{formatCurrency(pay.netPayout)}</td>
+                      <td className="p-4 font-black text-emerald-600 text-sm">{formatCurrency(pay.netPayout)}</td>
                       <td className="p-4">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
                           pay.status === 'PAID'
@@ -1435,12 +1585,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         {pay.status === 'PENDING' ? (
                           <button
                             onClick={() => handleConfirmPayout(pay.id)}
-                            className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
+                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-xs"
                           >
                             Xác Nhận Đã Chuyển
                           </button>
                         ) : (
-                          <span className="text-[11px] text-slate-400">Đã chi trả: {pay.payoutDate}</span>
+                          <span className="text-[11px] text-slate-400 font-medium">Đã chi trả: {pay.payoutDate}</span>
                         )}
                       </td>
                     </tr>
@@ -1519,19 +1669,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               {/* Information Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-slate-400 block text-[10px]">Hotline:</span>
                   <strong className="text-slate-800">{selectedRestDetail.phone}</strong>
                 </div>
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-slate-400 block text-[10px]">Giờ mở cửa:</span>
                   <strong className="text-slate-800">{selectedRestDetail.openHours}</strong>
                 </div>
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-slate-400 block text-[10px]">Sức chứa:</span>
                   <strong className="text-slate-800">{selectedRestDetail.capacity || 120} chỗ</strong>
                 </div>
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-slate-400 block text-[10px]">Đánh giá:</span>
                   <strong className="text-amber-600 font-black">★ {selectedRestDetail.rating} / 5.0</strong>
                 </div>

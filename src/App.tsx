@@ -5,11 +5,12 @@ import { AuthSplitView } from './views/AuthSplitView';
 import { Navbar, PortalTab } from './components/layout/Navbar';
 import { AdminDashboardView } from './views/AdminDashboardView';
 import { RestaurantDashboardView } from './views/RestaurantDashboardView';
-import { ShieldCheck, Store, Smartphone } from 'lucide-react';
+import { ShieldCheck, Store, Smartphone, X } from 'lucide-react';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<User>(() => storageService.getCurrentUser());
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showFloatingHelper, setShowFloatingHelper] = useState(true);
   const [activeTab, setActiveTab] = useState<PortalTab>(() =>
     currentUser.role === 'admin' ? 'admin_overview' : 'restaurant_reservations'
   );
@@ -160,29 +161,38 @@ export function App() {
       </main>
 
       {/* Global Quick Demo Helper / Floating Pill */}
-      <div className="fixed bottom-4 right-4 z-30 hidden sm:flex items-center gap-2.5 bg-slate-900/90 text-white backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-slate-700 text-xs">
-        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        <span>
-          Đang vào vai: <strong>{currentUser.name}</strong>
-        </span>
-        <span className={`text-[10px] px-1.5 py-0.5 rounded font-extrabold ${
-          currentUser.role === 'admin' ? 'bg-amber-500 text-slate-950' : 'bg-emerald-600 text-white'
-        }`}>
-          {currentUser.role === 'admin' ? '👑 Admin' : '🏪 Quán'}
-        </span>
-        <button
-          onClick={() => {
-            if (currentUser.role === 'admin') {
-              if (restaurantUser) handleUserChanged(restaurantUser);
-            } else {
-              if (adminUser) handleUserChanged(adminUser);
-            }
-          }}
-          className="ml-2 text-[11px] font-bold text-amber-400 hover:text-amber-300 underline"
-        >
-          {currentUser.role === 'admin' ? '➔ Sang Quản Trị Quán' : '➔ Sang Admin Tổng'}
-        </button>
-      </div>
+      {showFloatingHelper && (
+        <div className="fixed bottom-4 right-4 z-30 hidden sm:flex items-center gap-2.5 bg-slate-900/90 text-white backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-xl border border-slate-700 text-xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>
+            Đang vào vai: <strong>{currentUser.name}</strong>
+          </span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-extrabold ${
+            currentUser.role === 'admin' ? 'bg-amber-500 text-slate-950' : 'bg-emerald-600 text-white'
+          }`}>
+            {currentUser.role === 'admin' ? '👑 Admin' : '🏪 Quán'}
+          </span>
+          <button
+            onClick={() => {
+              if (currentUser.role === 'admin') {
+                if (restaurantUser) handleUserChanged(restaurantUser);
+              } else {
+                if (adminUser) handleUserChanged(adminUser);
+              }
+            }}
+            className="ml-1 text-[11px] font-bold text-amber-400 hover:text-amber-300 underline"
+          >
+            {currentUser.role === 'admin' ? '➔ Sang Quản Trị Quán' : '➔ Sang Admin Tổng'}
+          </button>
+          <button
+            onClick={() => setShowFloatingHelper(false)}
+            className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors ml-1"
+            title="Đóng thanh chuyển nhanh"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

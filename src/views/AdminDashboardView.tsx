@@ -105,6 +105,74 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   // Reports filter
   const [reportStatusFilter, setReportStatusFilter] = useState<'ALL' | 'PENDING' | 'RESOLVED' | 'DISMISSED'>('ALL');
 
+  // 7-Day Revenue & Chart State
+  const [chartMetric, setChartMetric] = useState<'gmv' | 'tables'>('gmv');
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('q1');
+
+  // District Hotspots Data (Sơ đồ phân bổ bàn ghép theo khu vực ẩm thực)
+  const districtHotspots = [
+    {
+      id: 'q1',
+      name: 'Quận 1',
+      zone: 'Bến Nghé - Nguyễn Huệ - Lê Thánh Tôn',
+      tables: 86,
+      occupancy: 94,
+      revenue: 42500000,
+      status: 'PEAK',
+      statusText: 'Cháy bàn 94%',
+      cuisine: 'Lẩu Hồng Kông & Beefsteak',
+      avgBill: '280.000đ/người'
+    },
+    {
+      id: 'q3',
+      name: 'Quận 3',
+      zone: 'Hồ Con Rùa - Võ Văn Tần - Tú Xương',
+      tables: 64,
+      occupancy: 88,
+      revenue: 31800000,
+      status: 'HOT',
+      statusText: 'Giờ vàng 88%',
+      cuisine: 'Cơm Niêu & Lẩu Nấm Dưỡng Sinh',
+      avgBill: '220.000đ/người'
+    },
+    {
+      id: 'bt',
+      name: 'Bình Thạnh',
+      zone: 'Phan Xích Long - D2 - Ung Văn Khiêm',
+      tables: 58,
+      occupancy: 91,
+      revenue: 26200000,
+      status: 'PEAK',
+      statusText: 'Sôi nổi 91%',
+      cuisine: 'Nướng Than Hoa & BBQ Hàn Quốc',
+      avgBill: '195.000đ/người'
+    },
+    {
+      id: 'q10',
+      name: 'Quận 10',
+      zone: 'Sư Vạn Hạnh - Tô Hiến Thành - Vạn Hạnh Mall',
+      tables: 45,
+      occupancy: 85,
+      revenue: 21000000,
+      status: 'ACTIVE',
+      statusText: 'Ổn định 85%',
+      cuisine: 'Ốc Chảo Sài Gòn & Lẩu Bò',
+      avgBill: '165.000đ/người'
+    },
+    {
+      id: 'q7',
+      name: 'Quận 7',
+      zone: 'Phú Mỹ Hưng - Sky Garden - Tân Phong',
+      tables: 39,
+      occupancy: 82,
+      revenue: 18500000,
+      status: 'ACTIVE',
+      statusText: 'Thư thả 82%',
+      cuisine: 'Hải Sản Tươi Sống & Đồ Nướng Nhật',
+      avgBill: '250.000đ/người'
+    }
+  ];
+
   // 7-Day Revenue Data for Diagram
   const revenue7Days = [
     { day: 'Thứ 2', date: '12/10', gmv: 14200000, tables: 28, heightPercent: 38 },
@@ -292,14 +360,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   });
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-7 animate-in fade-in duration-200">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-10 space-y-6 animate-in fade-in duration-200">
       
       {/* SECTION BREADCRUMB & HEADER TITLE */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
         <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold mb-1">
-            <span>Bàn Điều Hành</span>
-            <span>/</span>
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold mb-1.5">
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Hệ Thống Trực Tuyến</span>
+            </span>
+            <span>•</span>
             <span className="text-brand-600 font-bold uppercase tracking-wider">
               {activeSection === 'overview' && 'Tổng Quan Hệ Thống'}
               {activeSection === 'restaurants' && 'Quản Lý Đối Tác Nhà Hàng'}
@@ -310,8 +381,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {activeSection === 'finance' && 'Tài Chính & Đối Soát Doanh Thu'}
             </span>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            {activeSection === 'overview' && 'Báo Cáo Hoạt Động & Sơ Đồ Hệ Sinh Thái'}
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            {activeSection === 'overview' && 'Bàn Điều Hành Hệ Thống Chạm Đũa'}
             {activeSection === 'restaurants' && 'Danh Sách Đối Tác Nhà Hàng & Thẩm Định Quán'}
             {activeSection === 'sessions' && 'Bàn Ăn Ghép Đang Diễn Ra Toàn Hệ Thống'}
             {activeSection === 'users' && 'Danh Sách Thành Viên & Hệ Thống Điểm Uy Tín 5.0★'}
@@ -319,20 +390,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSection === 'vouchers' && 'Chiến Dịch Voucher Toàn Sàn Kích Cầu Bàn Trống'}
             {activeSection === 'finance' && 'Đối Soát Doanh Số GMV & Hoa Hồng Nền Tảng'}
           </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            {activeSection === 'overview' && 'Theo dõi nhịp đập kinh doanh F&B, lưu lượng ghép bàn và doanh số thời gian thực toàn sàn'}
+            {activeSection === 'restaurants' && 'Quản lý thông tin menu, hoa hồng và phê duyệt hồ sơ đối tác F&B mới'}
+            {activeSection === 'sessions' && 'Giám sát các kèo ăn, tiến độ gom khách và thanh toán hóa đơn'}
+            {activeSection === 'users' && 'Quản lý cấp độ tin cậy và đảm bảo văn hóa ăn uống văn minh'}
+            {activeSection === 'moderation' && 'Giải quyết tranh chấp chia bill và bảo vệ quyền lợi đôi bên'}
+            {activeSection === 'vouchers' && 'Tạo mã giảm giá kích cầu các khung giờ thấp điểm cho đối tác'}
+            {activeSection === 'finance' && 'Đối soát dòng tiền thanh toán và quyết toán hoa hồng định kỳ'}
+          </p>
         </div>
 
         {/* Global Action Buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-shrink-0 self-start lg:self-center">
           <button
             onClick={() => setIsAddRestModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
+            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all hover:shadow"
           >
             <Plus className="w-3.5 h-3.5 text-amber-400" />
             <span>Thêm Quán Ăn Mới</span>
           </button>
           <button
             onClick={() => setIsAddCampaignModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all hover:shadow"
           >
             <Gift className="w-3.5 h-3.5" />
             <span>Tạo Voucher Sàn</span>
@@ -344,22 +424,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {/* TAB 1: OVERVIEW & DETAILED METRICS + DIAGRAMS */}
       {/* ========================================================================= */}
       {activeSection === 'overview' && (
-        <div className="space-y-7">
+        <div className="space-y-6">
           
           {/* Action Alerts Banner if pending restaurants or reports exist */}
           {(pendingRestaurants > 0 || pendingReportsCount > 0) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {pendingRestaurants > 0 && (
-                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 shadow-sm flex items-center justify-between gap-3">
+                <div className="p-3.5 px-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 shadow-xs flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="w-3 h-3 rounded-full bg-amber-500 animate-ping flex-shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping flex-shrink-0" />
                     <span className="text-xs text-amber-950 font-bold">
                       Có <strong>{pendingRestaurants} quán ăn mới</strong> vừa nộp hồ sơ chờ thẩm định.
                     </span>
                   </div>
                   <button
                     onClick={() => onSectionChange && onSectionChange('restaurants')}
-                    className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-xs whitespace-nowrap"
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-xs whitespace-nowrap transition-colors"
                   >
                     Duyệt ngay &rarr;
                   </button>
@@ -367,16 +447,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               )}
 
               {pendingReportsCount > 0 && (
-                <div className="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 shadow-sm flex items-center justify-between gap-3">
+                <div className="p-3.5 px-4 rounded-2xl bg-rose-50/90 border border-rose-200/90 shadow-xs flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0 animate-bounce" />
+                    <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
                     <span className="text-xs text-rose-950 font-bold">
                       Có <strong>{pendingReportsCount} khiếu nại bàn ăn</strong> cần Admin can thiệp xử lý.
                     </span>
                   </div>
                   <button
                     onClick={() => onSectionChange && onSectionChange('moderation')}
-                    className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-xs whitespace-nowrap"
+                    className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-xs whitespace-nowrap transition-colors"
                   >
                     Xử lý &rarr;
                   </button>
@@ -389,8 +469,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
             {/* KPI 1 */}
-            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400" />
+            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
                   <span>Tổng GMV Đặt Bàn (Tháng này)</span>
@@ -411,8 +491,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             {/* KPI 2 */}
-            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 to-amber-400" />
+            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-amber-400" />
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
                   <span>Hoa Hồng Sàn Thực Thu (10%)</span>
@@ -431,8 +511,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             {/* KPI 3 */}
-            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-500 to-amber-500" />
+            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 to-amber-500" />
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
                   <span>Bàn Ghép Thành Công</span>
@@ -451,8 +531,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             {/* KPI 4 */}
-            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 to-blue-500" />
+            <div className="bg-white p-5 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-500 to-indigo-500" />
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
                   <span>Cộng Đồng & Đối Tác</span>
@@ -471,250 +551,323 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
 
-          {/* SƠ ĐỒ 1: BIỂU ĐỒ TĂNG TRƯỞNG DOANH THU 7 NGÀY GẦN NHẤT (SVG BAR CHART) */}
-          <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* SƠ ĐỒ 1: BIỂU ĐỒ DOANH SỐ & LƯỢNG BÀN GHÉP 7 NGÀY QUA (ELEGANT SAAS BAR CHART) */}
+          <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <BarChart2 className="w-5 h-5 text-brand-600" />
+                  <div className="p-1.5 rounded-xl bg-brand-50 text-brand-600 border border-brand-200">
+                    <BarChart2 className="w-4 h-4" />
+                  </div>
                   <h3 className="font-black text-base text-slate-900">
                     Sơ Đồ Doanh Số & Lượng Bàn Ăn Ghép 7 Ngày Qua
                   </h3>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-1">
                   Phân tích chu kỳ đặt bàn trong tuần: Thứ Sáu & Thứ Bảy là 2 ngày bùng nổ công suất lẩu nướng
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 text-xs font-bold">
-                <span className="flex items-center gap-1.5 text-slate-600">
-                  <span className="w-3 h-3 rounded-md bg-gradient-to-t from-brand-600 to-amber-400" />
-                  Doanh số GMV
-                </span>
-                <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
+              {/* Chart Controls & Switcher */}
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                  <button
+                    onClick={() => setChartMetric('gmv')}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      chartMetric === 'gmv'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    💰 Doanh Số GMV
+                  </button>
+                  <button
+                    onClick={() => setChartMetric('tables')}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      chartMetric === 'tables'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    🍽️ Lượng Bàn Ghép
+                  </button>
+                </div>
+
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 text-xs font-black">
                   🔥 Cuối tuần cao điểm (+85%)
                 </span>
               </div>
             </div>
 
-            {/* Interactive SVG / Bar Graph */}
-            <div className="pt-4 pb-2">
-              <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end h-56 pt-6 px-2 border-b-2 border-slate-200">
-                {revenue7Days.map((item, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
-                    {/* Tooltip on hover */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-slate-900 text-white px-2 py-1 rounded-lg font-black whitespace-nowrap shadow-md mb-1 pointer-events-none">
-                      {formatCurrency(item.gmv)} • {item.tables} bàn
-                    </div>
+            {/* Interactive SVG Bar Chart Container with horizontal guideline scale */}
+            <div className="relative pt-6 pb-2">
+              {/* Background Guidelines */}
+              <div className="absolute inset-x-0 top-6 bottom-10 flex flex-col justify-between pointer-events-none opacity-40">
+                <div className="border-b border-dashed border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>{chartMetric === 'gmv' ? '40.000.000đ' : '80 bàn'}</span>
+                </div>
+                <div className="border-b border-dashed border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>{chartMetric === 'gmv' ? '30.000.000đ' : '60 bàn'}</span>
+                </div>
+                <div className="border-b border-dashed border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>{chartMetric === 'gmv' ? '20.000.000đ' : '40 bàn'}</span>
+                </div>
+                <div className="border-b border-dashed border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>{chartMetric === 'gmv' ? '10.000.000đ' : '20 bàn'}</span>
+                </div>
+              </div>
 
-                    {/* Bar column */}
-                    <div className="w-full max-w-[56px] bg-slate-100 rounded-t-2xl p-1 flex items-end h-full">
-                      <div
-                        className={`w-full rounded-t-xl transition-all duration-500 group-hover:brightness-110 shadow-sm ${
-                          item.isPeak
-                            ? 'bg-gradient-to-t from-brand-600 via-amber-500 to-amber-400'
-                            : 'bg-gradient-to-t from-slate-700 to-slate-500'
-                        }`}
-                        style={{ height: `${item.heightPercent}%` }}
-                      />
-                    </div>
+              {/* 7 Columns */}
+              <div className="relative z-10 grid grid-cols-7 gap-2 sm:gap-6 items-end h-60 px-2 sm:px-6 border-b-2 border-slate-200">
+                {revenue7Days.map((item, idx) => {
+                  const barHeight = chartMetric === 'gmv' 
+                    ? item.heightPercent 
+                    : Math.round((item.tables / 80) * 100);
 
-                    {/* Date label */}
-                    <div className="text-center mt-2">
-                      <span className={`block text-xs font-black ${item.isPeak ? 'text-brand-600' : 'text-slate-800'}`}>
-                        {item.day}
-                      </span>
-                      <span className="text-[10px] text-slate-400">{item.date}</span>
+                  return (
+                    <div key={idx} className="flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
+                      {/* Floating Metric Label on Bar */}
+                      <div className="text-[11px] font-black text-slate-700 group-hover:text-brand-600 transition-colors whitespace-nowrap">
+                        {chartMetric === 'gmv' ? `${(item.gmv / 1000000).toFixed(1)}M` : `${item.tables} bàn`}
+                      </div>
+
+                      {/* Bar Column Track */}
+                      <div className="w-full max-w-[44px] bg-slate-50 hover:bg-slate-100 rounded-t-xl p-0.5 flex items-end h-full transition-colors">
+                        <div
+                          className={`w-full rounded-t-lg transition-all duration-500 group-hover:brightness-110 shadow-sm ${
+                            item.isPeak
+                              ? 'bg-gradient-to-t from-brand-600 via-amber-500 to-amber-400 shadow-md shadow-brand-500/25 ring-2 ring-brand-400/40'
+                              : 'bg-gradient-to-t from-amber-500/80 via-amber-400 to-amber-300'
+                          }`}
+                          style={{ height: `${barHeight}%` }}
+                        />
+                      </div>
+
+                      {/* Date label */}
+                      <div className="text-center mt-2">
+                        <span className={`block text-xs font-black ${item.isPeak ? 'text-brand-600' : 'text-slate-800'}`}>
+                          {item.day}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium">{item.date}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="text-slate-500 block">Doanh số trung bình ngày thường:</span>
-                <strong className="text-slate-900 text-sm font-black">17.975.000đ / ngày</strong>
+            {/* Bottom 3 Summary Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 flex items-center justify-between">
+                <div>
+                  <span className="text-slate-500 block font-medium">Doanh số TB ngày thường:</span>
+                  <strong className="text-slate-900 text-sm font-black mt-0.5 block">17.975.000đ / ngày</strong>
+                </div>
+                <Calendar className="w-5 h-5 text-slate-400" />
               </div>
-              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200">
-                <span className="text-amber-800 block">Doanh số trung bình cuối tuần:</span>
-                <strong className="text-amber-950 text-sm font-black">34.900.000đ / ngày</strong>
+              <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between">
+                <div>
+                  <span className="text-amber-800 block font-medium">Doanh số TB cuối tuần:</span>
+                  <strong className="text-amber-950 text-sm font-black mt-0.5 block">34.900.000đ / ngày</strong>
+                </div>
+                <Flame className="w-5 h-5 text-amber-500" />
               </div>
-              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200">
-                <span className="text-emerald-800 block">Tỷ lệ lấp đầy bàn tiệc TB:</span>
-                <strong className="text-emerald-950 text-sm font-black">89.2% công suất bàn lớn</strong>
+              <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between">
+                <div>
+                  <span className="text-emerald-800 block font-medium">Tỷ lệ lấp đầy bàn tiệc TB:</span>
+                  <strong className="text-emerald-950 text-sm font-black mt-0.5 block">89.2% công suất bàn lớn</strong>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               </div>
             </div>
           </div>
 
-          {/* SƠ ĐỒ 2: SƠ ĐỒ PHỄU GOM BÀN ĂN & DONUT CHART THỂ LOẠI MÓN */}
+          {/* SƠ ĐỒ 2: PHÂN BỔ BÀN GHÉP THEO KHU VỰC ẨM THỰC (REPLACED FUNNEL) & CƠ CẤU MÓN ĂN */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            {/* SƠ ĐỒ PHỄU (FUNNEL DIAGRAM) */}
-            <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-brand-600" />
-                  <h3 className="font-black text-sm sm:text-base text-slate-900">
-                    Sơ Đồ Phễu Chuyển Đổi Ghép Bàn Ăn
-                  </h3>
+            {/* SƠ ĐỒ 2: BẢN ĐỒ PHÂN BỔ BÀN GHÉP THEO ĐIỂM NÓNG ẨM THỰC */}
+            <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-xl bg-brand-50 text-brand-600 border border-brand-200">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm sm:text-base text-slate-900">
+                        Phân Bổ Bàn Ghép Theo Điểm Nóng Ẩm Thực
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Mật độ bàn ăn ghép và công suất chỗ ngồi theo 5 quận trọng điểm
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-900 text-white">
+                    TP. HCM
+                  </span>
                 </div>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  Hiệu quả 96.4%
-                </span>
+
+                {/* District List with Visual Occupancy Meters */}
+                <div className="space-y-2.5 mt-5">
+                  {districtHotspots.map((d) => {
+                    const isSelected = selectedDistrict === d.id;
+                    return (
+                      <div
+                        key={d.id}
+                        onClick={() => setSelectedDistrict(d.id)}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-50/70 border-brand-500 ring-1 ring-brand-500 shadow-xs'
+                            : 'bg-slate-50/70 hover:bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-xs text-slate-900">{d.name}</span>
+                            <span className="text-[10px] text-slate-500 hidden sm:inline">• {d.zone}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-slate-900">{d.tables} bàn</span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                              d.status === 'PEAK'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : d.status === 'HOT'
+                                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            }`}>
+                              {d.statusText}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Occupancy bar */}
+                        <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              d.status === 'PEAK'
+                                ? 'bg-gradient-to-r from-brand-500 to-rose-500'
+                                : d.status === 'HOT'
+                                ? 'bg-gradient-to-r from-amber-400 to-brand-500'
+                                : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                            }`}
+                            style={{ width: `${d.occupancy}%` }}
+                          />
+                        </div>
+
+                        {/* Selected District Expanded Info */}
+                        {isSelected && (
+                          <div className="mt-2.5 pt-2 border-t border-amber-200/80 flex items-center justify-between text-[11px] animate-in fade-in duration-150">
+                            <span className="text-slate-600 font-medium">
+                              Ưa chuộng: <strong className="text-slate-900">{d.cuisine}</strong>
+                            </span>
+                            <span className="text-brand-600 font-black">
+                              GMV: {formatCurrency(d.revenue)} ({d.avgBill})
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="text-xs text-slate-500">
-                Quy trình từ lúc thực khách tạo phòng gom khách đến khi ăn xong và thanh toán
-              </p>
 
-              {/* 4-Step Funnel visualization */}
-              <div className="space-y-3 pt-2 text-xs">
-                {/* Step 1 */}
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center text-xs">
-                      1
-                    </span>
-                    <div>
-                      <strong className="text-slate-900 block">Khởi Tạo Phòng Kèo Ăn</strong>
-                      <span className="text-[11px] text-slate-500">Chọn quán ăn, giờ hẹn & số người</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-black text-slate-900">412 bàn</span>
-                    <span className="block text-[10px] text-slate-400">100% gốc</span>
-                  </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs">
-                      2
-                    </span>
-                    <div>
-                      <strong className="text-slate-900 block">Gom Đủ Khách & Đồng Thuận</strong>
-                      <span className="text-[11px] text-slate-500">Các thành viên chat & bấm sẵn sàng</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-black text-amber-900">354 bàn</span>
-                    <span className="block text-[10px] text-amber-700 font-bold">85.9% đạt chỉ tiêu</span>
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div className="p-3 rounded-2xl bg-brand-50/60 border border-brand-200 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-xl bg-brand-600 text-white font-black flex items-center justify-center text-xs">
-                      3
-                    </span>
-                    <div>
-                      <strong className="text-slate-900 block">Nhà Hàng Tiếp Nhận & Giữ Bàn</strong>
-                      <span className="text-[11px] text-slate-500">Xác nhận đơn qua Kênh Đối Tác</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-black text-brand-700">334 bàn</span>
-                    <span className="block text-[10px] text-brand-600 font-bold">81.1% giữ bàn thành công</span>
-                  </div>
-                </div>
-
-                {/* Step 4 */}
-                <div className="p-3 rounded-2xl bg-emerald-50 border-2 border-emerald-300 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-xs">
-                      4
-                    </span>
-                    <div>
-                      <strong className="text-emerald-950 block">Ăn Xong & Chia Bill Sòng Phẳng</strong>
-                      <span className="text-[11px] text-emerald-700 font-medium">Thanh toán trọn vẹn, không bùng tiền</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-base font-black text-emerald-700">332 bàn</span>
-                    <span className="block text-[10px] text-emerald-800 font-black">99.4% hoàn hảo</span>
-                  </div>
-                </div>
+              {/* District Summary Footer */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Tổng bàn đang mở: <strong className="text-slate-900">292 bàn</strong>
+                </span>
+                <span>Lấp đầy TB: <strong className="text-brand-600">89.4%</strong></span>
+                <span>Gom đủ TB: <strong className="text-slate-900">6.8 phút</strong></span>
               </div>
             </div>
 
-            {/* SƠ ĐỒ DONUT & KHUNG GIỜ CAO ĐIỂM */}
-            <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <PieChart className="w-5 h-5 text-amber-500" />
-                  <h3 className="font-black text-sm sm:text-base text-slate-900">
-                    Cơ Cấu Món Ăn & Khung Giờ Cao Điểm
-                  </h3>
-                </div>
-                <span className="text-[11px] font-bold text-slate-400">Thời gian thực</span>
-              </div>
-
-              {/* Category Breakdown Bars */}
-              <div className="space-y-3 pt-1 text-xs">
-                <div>
-                  <div className="flex justify-between font-black mb-1 text-slate-800">
-                    <span className="flex items-center gap-1.5">🍲 Lẩu Trung Hoa, Lẩu Nấm, Lẩu Bò</span>
-                    <span className="text-brand-600">48% (160 bàn)</span>
+            {/* SƠ ĐỒ CƠ CẤU KHẨU VỊ & KHUNG GIỜ CAO ĐIỂM */}
+            <div className="bg-white p-6 rounded-3xl border-2 border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+                      <PieChart className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm sm:text-base text-slate-900">
+                        Cơ Cấu Khẩu Vị & Khung Giờ Cao Điểm
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Thị phần sở thích ẩm thực thực khách tìm kiếm hôm nay
+                      </p>
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                    <div className="bg-brand-500 h-3 rounded-full" style={{ width: '48%' }} />
-                  </div>
+                  <span className="text-[11px] font-bold text-slate-500">Thời gian thực</span>
                 </div>
 
-                <div>
-                  <div className="flex justify-between font-black mb-1 text-slate-800">
-                    <span className="flex items-center gap-1.5">🥩 Nướng Than Hoa & BBQ Hàn Quốc</span>
-                    <span className="text-amber-600">26% (87 bàn)</span>
+                {/* Category Breakdown Bars */}
+                <div className="space-y-3 mt-5 text-xs">
+                  <div>
+                    <div className="flex justify-between font-black mb-1.5 text-slate-800">
+                      <span className="flex items-center gap-1.5">🍲 Lẩu Trung Hoa, Lẩu Nấm, Lẩu Bò</span>
+                      <span className="text-brand-600 font-extrabold">48% (160 bàn)</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-gradient-to-r from-brand-600 to-amber-500 h-2.5 rounded-full" style={{ width: '48%' }} />
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                    <div className="bg-amber-500 h-3 rounded-full" style={{ width: '26%' }} />
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex justify-between font-black mb-1 text-slate-800">
-                    <span className="flex items-center gap-1.5">🦪 Ốc Sài Gòn & Hải Sản Tươi Sống</span>
-                    <span className="text-sky-600">16% (53 bàn)</span>
+                  <div>
+                    <div className="flex justify-between font-black mb-1.5 text-slate-800">
+                      <span className="flex items-center gap-1.5">🥩 Nướng Than Hoa & BBQ Hàn Quốc</span>
+                      <span className="text-amber-600 font-extrabold">26% (87 bàn)</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-gradient-to-r from-amber-500 to-amber-400 h-2.5 rounded-full" style={{ width: '26%' }} />
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                    <div className="bg-sky-500 h-3 rounded-full" style={{ width: '16%' }} />
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex justify-between font-black mb-1 text-slate-800">
-                    <span className="flex items-center gap-1.5">🍱 Ẩm Thực Nhật Bản & Cơm Niêu</span>
-                    <span className="text-emerald-600">10% (34 bàn)</span>
+                  <div>
+                    <div className="flex justify-between font-black mb-1.5 text-slate-800">
+                      <span className="flex items-center gap-1.5">🦪 Ốc Sài Gòn & Hải Sản Tươi Sống</span>
+                      <span className="text-sky-600 font-extrabold">16% (53 bàn)</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-gradient-to-r from-sky-500 to-teal-400 h-2.5 rounded-full" style={{ width: '16%' }} />
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                    <div className="bg-emerald-500 h-3 rounded-full" style={{ width: '10%' }} />
+
+                  <div>
+                    <div className="flex justify-between font-black mb-1.5 text-slate-800">
+                      <span className="flex items-center gap-1.5">🍱 Ẩm Thực Nhật Bản & Cơm Niêu</span>
+                      <span className="text-emerald-600 font-extrabold">10% (34 bàn)</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-2.5 rounded-full" style={{ width: '10%' }} />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Peak Hours Traffic Heatmap */}
-              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5">
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
                 <span className="text-xs font-black text-slate-900 block">
                   Tỷ Lệ Lấp Đầy Theo Khung Giờ Ăn:
                 </span>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200">
+                  <div className="p-2.5 rounded-2xl bg-amber-50/70 border border-amber-200">
                     <span className="text-[10px] text-amber-800 block font-semibold">Trưa văn phòng</span>
-                    <strong className="text-sm font-black text-amber-950">11h30 - 13h30</strong>
+                    <strong className="text-xs sm:text-sm font-black text-amber-950">11h30 - 13h30</strong>
                     <span className="block text-[10px] text-amber-700 font-bold mt-0.5">88% lấp đầy</span>
                   </div>
 
-                  <div className="p-2.5 rounded-2xl bg-brand-50 border border-brand-200">
+                  <div className="p-2.5 rounded-2xl bg-brand-50/70 border border-brand-200">
                     <span className="text-[10px] text-brand-800 block font-semibold">Tối tan ca (Vàng)</span>
-                    <strong className="text-sm font-black text-brand-950">18h00 - 20h30</strong>
+                    <strong className="text-xs sm:text-sm font-black text-brand-950">18h00 - 20h30</strong>
                     <span className="block text-[10px] text-brand-700 font-bold mt-0.5">96% lấp đầy 🔥</span>
                   </div>
 
-                  <div className="p-2.5 rounded-2xl bg-slate-100 border border-slate-200">
+                  <div className="p-2.5 rounded-2xl bg-slate-100/70 border border-slate-200">
                     <span className="text-[10px] text-slate-600 block font-semibold">Khuya lai rai</span>
-                    <strong className="text-sm font-black text-slate-900">21h00 - 23h30</strong>
+                    <strong className="text-xs sm:text-sm font-black text-slate-900">21h00 - 23h30</strong>
                     <span className="block text-[10px] text-slate-600 font-bold mt-0.5">74% lấp đầy</span>
                   </div>
                 </div>

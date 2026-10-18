@@ -1,6 +1,6 @@
 /**
- * Chạm Đũa - Rooms & Dining Sessions API
- * Endpoints: /api/rooms/*
+ * Chạm Đũa - Rooms API for B2B Portal (Admin & Restaurant Management)
+ * (End-user mobile actions like GPS check-in, PreAuth, Join/Leave belong to React Native Mobile)
  */
 import { apiClient } from './client';
 
@@ -26,24 +26,8 @@ export interface BackendRoom {
   createdAt?: string;
 }
 
-export interface RoomMember {
-  roomMemberId: number;
-  roomId: number;
-  userId: number;
-  name?: string;
-  avatarUrl?: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'LEFT';
-  joinedAt?: string;
-}
-
-export interface CheckInRequest {
-  latitude: number;
-  longitude: number;
-  address?: string;
-}
-
 export const roomsApi = {
-  // Get all rooms / dining sessions
+  // Get all rooms / dining sessions (for Admin oversight & Restaurant portal)
   getRooms: async () => {
     return apiClient.get<BackendRoom[]>('/api/rooms');
   },
@@ -53,7 +37,7 @@ export const roomsApi = {
     return apiClient.get<BackendRoom>(`/api/rooms/${roomId}`);
   },
 
-  // Create new room / dining session
+  // Create new room (for Partner Restaurant to open dining tables)
   createRoom: async (roomData: {
     title: string;
     description?: string;
@@ -69,53 +53,13 @@ export const roomsApi = {
     return apiClient.post<BackendRoom>('/api/rooms', roomData);
   },
 
-  // Update room
+  // Update room status or settings (Admin / Restaurant)
   updateRoom: async (roomId: number | string, roomData: Partial<BackendRoom>) => {
     return apiClient.put<BackendRoom>(`/api/rooms/${roomId}`, roomData);
   },
 
-  // Delete / Cancel room
+  // Delete / Cancel room (Admin emergency cancellation)
   deleteRoom: async (roomId: number | string) => {
     return apiClient.delete(`/api/rooms/${roomId}`);
-  },
-
-  // Join room request
-  joinRoom: async (roomId: number | string) => {
-    return apiClient.post<RoomMember>(`/api/rooms/${roomId}/join`);
-  },
-
-  // Leave room
-  leaveRoom: async (roomId: number | string) => {
-    return apiClient.post<RoomMember>(`/api/rooms/${roomId}/leave`);
-  },
-
-  // Get pending member requests (for host)
-  getPendingMembers: async (roomId: number | string) => {
-    return apiClient.get<RoomMember[]>(`/api/rooms/${roomId}/members/pending`);
-  },
-
-  // Approve member
-  approveMember: async (roomId: number | string, memberId: number | string) => {
-    return apiClient.post<RoomMember>(`/api/rooms/${roomId}/members/${memberId}/approve`);
-  },
-
-  // Reject member
-  rejectMember: async (roomId: number | string, memberId: number | string) => {
-    return apiClient.post<RoomMember>(`/api/rooms/${roomId}/members/${memberId}/reject`);
-  },
-
-  // GPS Check-in at restaurant
-  checkIn: async (roomId: number | string, request: CheckInRequest) => {
-    return apiClient.post(`/api/rooms/${roomId}/check-in`, request);
-  },
-
-  // Create pre-authorization deposit
-  createPreAuthorization: async (roomId: number | string, amount: number) => {
-    return apiClient.post(`/api/rooms/${roomId}/preauthorizations`, { amount });
-  },
-
-  // Get pre-authorization status
-  getPreAuthorization: async (roomId: number | string, preAuthId: number | string) => {
-    return apiClient.get(`/api/rooms/${roomId}/preauthorizations/${preAuthId}`);
   },
 };

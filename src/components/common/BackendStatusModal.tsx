@@ -14,8 +14,7 @@ import {
   Code
 } from 'lucide-react';
 import { apiClient, API_BASE_URL } from '../../services/api/client';
-import { verificationApi } from '../../services/api/verificationApi';
-import { profileApi } from '../../services/api/profileApi';
+import { tagsApi } from '../../services/api/tagsApi';
 import { roomsApi } from '../../services/api/roomsApi';
 
 interface BackendStatusModalProps {
@@ -43,7 +42,7 @@ export const BackendStatusModal: React.FC<BackendStatusModalProps> = ({ isOpen, 
   const [tests, setTests] = useState<{ [key: string]: ApiTestResult }>({
     health: { endpoint: '/health', method: 'GET', status: null, latencyMs: null, loading: false },
     countries: { endpoint: '/api/verification/countries', method: 'GET', status: null, latencyMs: null, loading: false },
-    emailDomains: { endpoint: '/api/education/email-domains', method: 'GET', status: null, latencyMs: null, loading: false },
+    emailDomains: { endpoint: '/api/education/organizations', method: 'GET', status: null, latencyMs: null, loading: false },
     occupations: { endpoint: '/api/profile/occupations', method: 'GET', status: null, latencyMs: null, loading: false },
     tags: { endpoint: '/api/tags', method: 'GET', status: null, latencyMs: null, loading: false },
     rooms: { endpoint: '/api/rooms', method: 'GET', status: null, latencyMs: null, loading: false },
@@ -92,13 +91,13 @@ export const BackendStatusModal: React.FC<BackendStatusModalProps> = ({ isOpen, 
         setSelectedResult(result);
         return;
       } else if (testKey === 'countries') {
-        response = await verificationApi.getCountries();
+        response = await apiClient.get('/api/verification/countries');
       } else if (testKey === 'emailDomains') {
-        response = await verificationApi.getEducationOrganizations();
+        response = await apiClient.get('/api/education/organizations');
       } else if (testKey === 'occupations') {
-        response = await profileApi.getOccupations();
+        response = await tagsApi.getOccupations();
       } else if (testKey === 'tags') {
-        response = await profileApi.getTags();
+        response = await tagsApi.getTags();
       } else if (testKey === 'rooms') {
         response = await roomsApi.getRooms();
       } else if (testKey === 'me') {

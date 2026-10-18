@@ -39,8 +39,7 @@ import { Restaurant, MenuItem, GroupVoucher, DiningSession, User } from '../type
 import { storageService } from '../services/storageService';
 import { formatCurrency } from '../utils/geo';
 import { roomsApi } from '../services/api/roomsApi';
-import { profileApi } from '../services/api/profileApi';
-import { verificationApi } from '../services/api/verificationApi';
+import { tagsApi } from '../services/api/tagsApi';
 
 interface RestaurantDashboardViewProps {
   currentUser: User;
@@ -192,7 +191,7 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
     fetchLiveReservations(currentRestaurant.id);
 
     // Fetch tags from AWS Backend
-    profileApi.getTags().then((res) => {
+    tagsApi.getTags().then((res) => {
       if (res.ok && res.data && Array.isArray(res.data)) {
         setAvailableTags(res.data.map((t: any) => t.tagName || t.name || t));
       }

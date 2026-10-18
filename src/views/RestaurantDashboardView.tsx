@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Store,
   Calendar,
@@ -30,11 +30,17 @@ import {
   Award,
   LayoutGrid,
   List,
-  Search
+  Search,
+  Server,
+  RefreshCw,
+  X
 } from 'lucide-react';
 import { Restaurant, MenuItem, GroupVoucher, DiningSession, User } from '../types';
 import { storageService } from '../services/storageService';
 import { formatCurrency } from '../utils/geo';
+import { roomsApi } from '../services/api/roomsApi';
+import { profileApi } from '../services/api/profileApi';
+import { verificationApi } from '../services/api/verificationApi';
 
 interface RestaurantDashboardViewProps {
   currentUser: User;
@@ -102,18 +108,167 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
   const [statsViewMode, setStatsViewMode] = useState<'card' | 'list'>('list');
   const [statsSearchQuery, setStatsSearchQuery] = useState('');
 
+  // Live AWS Backend state
+  const [isLoadingAwsRooms, setIsLoadingAwsRooms] = useState(false);
+  const [awsRoomsNotice, setAwsRoomsNotice] = useState<string | null>(null);
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [newRoomTitle, setNewRoomTitle] = useState('');
+  const [newRoomSlots, setNewRoomSlots] = useState<number>(4);
+  const [newRoomTime, setNewRoomTime] = useState('19:30');
+  const [newRoomDeposit, setNewRoomDeposit] = useState<number>(50000);
+  const [newRoomNote, setNewRoomNote] = useState('');
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+
+  // Function to load real rooms from AWS ALB backend API
+  const fetchLiveReservations = async (restaurantId: string = currentRestaurant.id) => {
+    setIsLoadingAwsRooms(true);
+    try {
+      const res = await roomsApi.getRooms();
+      if (res.ok && res.data && res.data.length > 0) {
+        // Map backend rooms into DiningSession objects
+        const liveSessions: DiningSession[] = res.data.map((r, idx) => ({
+          id: `aws_room_${r.roomId || idx + 1}`,
+          title: r.title || `Bàn Ghép Trực Tiếp #${r.roomId}`,
+          restaurantId: restaurantId,
+          restaurantName: r.restaurantName || currentRestaurant.name,
+          restaurantAddress: r.restaurantAddress || currentRestaurant.address,
+          restaurantImage: currentRestaurant.coverImage,
+          isRestaurantRegistered: true,
+          hostId: `user_${r.hostUserId || '1'}`,
+          hostName: r.hostName || 'Khách đặt qua AWS',
+          hostAvatar: r.hostAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          targetSlots: r.maxMembers || 4,
+          joinedMembers: [
+            {
+              userId: `user_${r.hostUserId || '1'}`,
+              name: r.hostName || 'Chủ Bàn AWS',
+              avatar: r.hostAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+              isHost: true,
+              readyToLock: true,
+              introduction: 'Đặt bàn qua AWS Backend ALB'
+            }
+          ],
+          invitedFriends: [],
+          eatingTime: r.scheduledTime || 'Hôm nay, 19:30',
+          note: r.description || 'Đơn chốt ghép bàn từ hệ thống Chạm Đũa',
+          status: (r.status === 'COMPLETED' ? 'COMPLETED' : r.status === 'LOCKED' ? 'LOCKED' : 'RECRUITING') as any,
+          discussionMessages: [],
+          reservationStatus: r.status === 'LOCKED' ? 'CONFIRMED_BY_RESTAURANT' : 'SENT_TO_RESTAURANT',
+          paymentInfo: r.preAuthAmount ? {
+            orderType: 'DINE_IN_ORDER',
+            paymentMode: 'PRE_PAY',
+            orderItems: [],
+            subtotal: r.preAuthAmount,
+            discountAmount: 0,
+            totalAmount: r.preAuthAmount,
+            amountPerPerson: Math.round(r.preAuthAmount / (r.maxMembers || 4)),
+            paymentStatus: 'PAID',
+            paidMembers: {}
+          } : undefined,
+          createdAt: r.createdAt || new Date().toISOString()
+        }));
+
+        setReservations(liveSessions);
+        setAwsRoomsNotice(`Đã đồng bộ trực tiếp ${liveSessions.length} đơn đặt bàn từ AWS ALB Backend!`);
+      } else {
+        const local = storageService.getRestaurantReservations(restaurantId);
+        setReservations(local);
+        if (res.error?.status === 401) {
+          setAwsRoomsNotice('Đã kết nối AWS ALB. API yêu cầu đăng nhập Bearer Token để lấy phòng riêng tư.');
+        }
+      }
+    } catch (err: any) {
+      console.warn('Live rooms fetch fallback:', err);
+      const local = storageService.getRestaurantReservations(restaurantId);
+      setReservations(local);
+    } finally {
+      setIsLoadingAwsRooms(false);
+      setTimeout(() => setAwsRoomsNotice(null), 5000);
+    }
+  };
+
+  // Load backend tags and initial reservations on mount
+  useEffect(() => {
+    fetchLiveReservations(currentRestaurant.id);
+
+    // Fetch tags from AWS Backend
+    profileApi.getTags().then((res) => {
+      if (res.ok && res.data && Array.isArray(res.data)) {
+        setAvailableTags(res.data.map((t: any) => t.tagName || t.name || t));
+      }
+    }).catch(() => {});
+  }, [currentRestaurant.id]);
+
   // Switch restaurant helper
   const handleSelectRestaurant = (id: string) => {
     setSelectedRestId(id);
-    setReservations(storageService.getRestaurantReservations(id));
+    fetchLiveReservations(id);
     setMenuItems(storageService.getMenuItems(id));
     setVouchers(storageService.getVouchers(id));
   };
 
   // Confirm booking reservation
-  const handleConfirmReservation = (sessionId: string) => {
+  const handleConfirmReservation = async (sessionId: string) => {
+    if (sessionId.startsWith('aws_room_')) {
+      const numericId = sessionId.replace('aws_room_', '');
+      try {
+        await roomsApi.updateRoom(numericId, { status: 'LOCKED' });
+      } catch (err) {
+        console.warn('Update room on AWS warning:', err);
+      }
+    }
     storageService.confirmRestaurantReservation(sessionId);
-    setReservations(storageService.getRestaurantReservations(currentRestaurant.id));
+    setReservations(prev =>
+      prev.map(r => r.id === sessionId ? { ...r, reservationStatus: 'CONFIRMED_BY_RESTAURANT' } : r)
+    );
+  };
+
+  // Reject / Cancel booking reservation
+  const handleRejectReservation = async (sessionId: string) => {
+    if (!window.confirm('Bạn có chắc muốn từ chối hoặc hủy đơn đặt bàn này?')) return;
+    if (sessionId.startsWith('aws_room_')) {
+      const numericId = sessionId.replace('aws_room_', '');
+      try {
+        await roomsApi.updateRoom(numericId, { status: 'CANCELLED' });
+      } catch (err) {
+        console.warn('Cancel room on AWS warning:', err);
+      }
+    }
+    setReservations(prev => prev.filter(r => r.id !== sessionId));
+  };
+
+  // Create new table on AWS Backend API directly
+  const handleCreateAwsRoomSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoomTitle.trim()) return;
+
+    setIsLoadingAwsRooms(true);
+    try {
+      const res = await roomsApi.createRoom({
+        title: newRoomTitle.trim(),
+        description: newRoomNote.trim() || `Bàn ghép do quán ${currentRestaurant.name} khởi tạo đón khách.`,
+        restaurantName: currentRestaurant.name,
+        restaurantAddress: currentRestaurant.address,
+        scheduledTime: newRoomTime,
+        maxMembers: Number(newRoomSlots),
+        isPreAuthRequired: newRoomDeposit > 0,
+        preAuthAmount: Number(newRoomDeposit)
+      });
+
+      if (res.ok) {
+        alert('🎉 Đã tạo bàn ghép thành công trên AWS ALB Backend!');
+        setIsCreateRoomModalOpen(false);
+        setNewRoomTitle('');
+        setNewRoomNote('');
+        fetchLiveReservations(currentRestaurant.id);
+      } else {
+        alert(`API AWS phản hồi (${res.error?.status || 400}): ${res.error?.detail || 'Chưa thể tạo bàn, vui lòng kiểm tra đăng nhập.'}`);
+      }
+    } catch (err: any) {
+      alert('Lỗi kết nối API AWS: ' + (err?.message || 'Network error'));
+    } finally {
+      setIsLoadingAwsRooms(false);
+    }
   };
 
   // Add Dish
@@ -284,17 +439,56 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
       {/* TAB 1: RESERVATIONS / NHẬN THÔNG TIN ĐẶT BÀN */}
       {activeTab === 'reservations' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Danh Sách Nhóm Khách Chốt Đặt Bàn</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900">Danh Sách Nhóm Khách Chốt Đặt Bàn</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  Live AWS Rooms API
+                </span>
+              </div>
               <p className="text-xs text-slate-500">
-                Khi các nhóm người dùng thảo luận xong và bấm "Chốt Bàn", hệ thống tự động đẩy yêu cầu đến đây.
+                Đồng bộ trực tiếp với máy chủ AWS ALB. Khi khách đặt bàn hoặc check-in tại quán, hệ thống cập nhật tức thì.
               </p>
             </div>
-            <span className="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200">
-              Đang tiếp nhận thời gian thực
-            </span>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchLiveReservations(currentRestaurant.id)}
+                disabled={isLoadingAwsRooms}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                title="Gọi API GET /api/rooms từ AWS ALB"
+              >
+                <Server className={`w-3.5 h-3.5 ${isLoadingAwsRooms ? 'animate-spin text-amber-400' : 'text-emerald-400'}`} />
+                <span>{isLoadingAwsRooms ? 'Đang gọi AWS...' : 'Đồng bộ API AWS'}</span>
+              </button>
+
+              <button
+                onClick={() => setIsCreateRoomModalOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                title="Tạo bàn mới bằng API POST /api/rooms"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Mở Bàn Ghép Trên AWS</span>
+              </button>
+            </div>
           </div>
+
+          {/* AWS Notice Banner */}
+          {awsRoomsNotice && (
+            <div className="p-3.5 rounded-2xl bg-slate-900 text-white text-xs border border-slate-800 flex items-center justify-between animate-in fade-in duration-150">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                <span>{awsRoomsNotice}</span>
+              </div>
+              <button
+                onClick={() => setAwsRoomsNotice(null)}
+                className="text-slate-400 hover:text-white text-xs font-bold px-2 py-0.5 rounded-lg bg-slate-800"
+              >
+                Đóng
+              </button>
+            </div>
+          )}
 
           {reservations.length === 0 ? (
             <div className="bg-white rounded-3xl p-10 text-center border border-slate-200">
@@ -316,8 +510,13 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-sm text-slate-900">{res.title}</span>
+                          {res.id.startsWith('aws_room_') && (
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              AWS #{res.id.replace('aws_room_', '')}
+                            </span>
+                          )}
                           <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                             isConfirmed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800 animate-pulse'
                           }`}>
@@ -393,27 +592,163 @@ export const RestaurantDashboardView: React.FC<RestaurantDashboardViewProps> = (
                     </div>
 
                     {/* Action buttons */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
                       <span className="text-xs text-slate-500">
                         Ghi chú: "{res.note}"
                       </span>
-                      {!isConfirmed ? (
-                        <button
-                          onClick={() => handleConfirmReservation(res.id)}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Tiếp Nhận & Giữ Bàn</span>
-                        </button>
-                      ) : (
-                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                          ✓ Đã chuẩn bị bàn sẵn
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {!isConfirmed ? (
+                          <>
+                            <button
+                              onClick={() => handleRejectReservation(res.id)}
+                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs transition-colors"
+                              title="Từ chối nhận bàn này (Cập nhật API)"
+                            >
+                              Từ Chối
+                            </button>
+                            <button
+                              onClick={() => handleConfirmReservation(res.id)}
+                              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Tiếp Nhận & Giữ Bàn</span>
+                            </button>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                              ✓ Đã chuẩn bị bàn sẵn
+                            </span>
+                            <button
+                              onClick={() => handleRejectReservation(res.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                              title="Hủy bàn này"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Modal Mở Bàn Ghép Mới Trên AWS Backend */}
+          {isCreateRoomModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 overflow-hidden">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                      <Server className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">Mở Bàn Ghép Mới Trực Tiếp Trên AWS</h4>
+                      <p className="text-[11px] text-slate-500">API: POST /api/rooms (Cụm Swagger AWS ALB)</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsCreateRoomModalOpen(false)}
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateAwsRoomSubmit} className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Tiêu đề bàn ghép *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={`Ví dụ: Kèo Ăn Nhóm 4 Người - ${currentRestaurant.name}`}
+                      value={newRoomTitle}
+                      onChange={(e) => setNewRoomTitle(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Số khách tối đa *</label>
+                      <input
+                        type="number"
+                        min={2}
+                        max={20}
+                        required
+                        value={newRoomSlots}
+                        onChange={(e) => setNewRoomSlots(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-emerald-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Giờ đón khách *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="19:30"
+                        value={newRoomTime}
+                        onChange={(e) => setNewRoomTime(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-emerald-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Tiền cọc giữ chỗ (Pre-Auth) VND</label>
+                    <input
+                      type="number"
+                      step={10000}
+                      min={0}
+                      value={newRoomDeposit}
+                      onChange={(e) => setNewRoomDeposit(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-emerald-600"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-0.5">Đặt 0 nếu không yêu cầu cọc trước qua API Pre-Authorization.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Mô tả & ghi chú cho khách</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Ưu đãi tặng món tráng miệng khi nhóm gom đủ người..."
+                      value={newRoomNote}
+                      onChange={(e) => setNewRoomNote(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateRoomModalOpen(false)}
+                      className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                    >
+                      Hủy Bỏ
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoadingAwsRooms}
+                      className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                    >
+                      {isLoadingAwsRooms ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Đang gửi AWS...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Server className="w-3.5 h-3.5" />
+                          <span>Xác Nhận Tạo Bàn AWS</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
         </div>

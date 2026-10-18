@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Utensils,
   Sparkles,
@@ -12,13 +12,17 @@ import {
   UserPlus,
   Store,
   User as UserIcon,
-  CheckCircle2
+  CheckCircle2,
+  Server,
+  RefreshCw
 } from 'lucide-react';
 import { User, Restaurant } from '../types';
 import { storageService } from '../services/storageService';
 import { InteractiveMap } from '../components/common/InteractiveMap';
 import { calculateDistanceKm, formatDistance } from '../utils/geo';
 import { SocialLoginModal } from '../components/auth/SocialLoginModal';
+import { authApi } from '../services/api/authApi';
+import { apiClient, API_BASE_URL } from '../services/api/client';
 
 interface AuthSplitViewProps {
   onLoginSuccess: (user: User) => void;
@@ -31,6 +35,22 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
   // Login states
   const [loginEmail, setLoginEmail] = useState('admin@chamdua.vn');
   const [loginPassword, setLoginPassword] = useState('123456');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiNotice, setApiNotice] = useState<string | null>(null);
+  const [backendStatus, setBackendStatus] = useState<{ isHealthy: boolean; latencyMs: number } | null>(null);
+
+  // Check live AWS ALB health on mount
+  useEffect(() => {
+    let mounted = true;
+    apiClient.checkHealth().then((health) => {
+      if (mounted && health) {
+        setBackendStatus({ isHealthy: true, latencyMs: health.latencyMs });
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Restaurant Partner Registration states
   const [regRestName, setRegRestName] = useState('');
@@ -97,8 +117,54 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
     onLoginSuccess(chosen);
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setApiNotice(null);
+
+    try {
+      // 1. Call live AWS ALB Auth API
+      const apiRes = await authApi.loginEmail(loginEmail, loginPassword);
+      if (apiRes.ok && apiRes.data?.accessToken) {
+        // Successfully authenticated with AWS ALB
+        const meRes = await authApi.getMe();
+        if (meRes.ok && meRes.data) {
+          const beUser = meRes.data;
+          const matched = allUsers.find(u => u.email.toLowerCase() === loginEmail.toLowerCase());
+          const chosenUser: User = matched || {
+            id: `user_${beUser.id}`,
+            name: beUser.name || loginEmail.split('@')[0],
+            email: beUser.email || loginEmail,
+            phone: beUser.phone || '',
+            role: (beUser.role as any) || (loginEmail.includes('admin') ? 'admin' : 'restaurant'),
+            avatar: beUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+            bio: 'Tài khoản xác thực từ AWS Backend',
+            foodPreferences: ['Lẩu & Nướng'],
+            favoriteBudget: '150.000đ - 300.000đ/người',
+            friends: [],
+            trustScore: 5.0,
+            totalMealsJoined: 1,
+            isProfileCompleted: true,
+            profileCompletionPercent: 100,
+            hasCompletedOnboardingTour: true,
+            location: {
+              lat: 10.7769,
+              lng: 106.7009,
+              address: 'Bến Nghé, Quận 1, TP. Hồ Chí Minh'
+            }
+          };
+          storageService.setCurrentUserId(chosenUser.id);
+          onLoginSuccess(chosenUser);
+          return;
+        }
+      }
+    } catch (err: any) {
+      console.warn('Backend login fallback:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+
+    // 2. Seamless Mock / Demo Fallback
     const matched = allUsers.find((u) => u.email.toLowerCase() === loginEmail.toLowerCase());
     const fallback = allUsers.find((u) => u.role === 'admin') || allUsers.find((u) => u.role === 'restaurant') || allUsers[0];
     const chosen = matched || fallback;
@@ -106,7 +172,7 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
     onLoginSuccess(chosen);
   };
 
-  const handlePartnerRegisterSubmit = (e: React.FormEvent) => {
+  const handlePartnerRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regRestName.trim()) {
       alert('Vui lòng nhập tên nhà hàng / quán ăn.');
@@ -125,7 +191,18 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
       return;
     }
 
-    // 1. Create Restaurant with PENDING status
+    setIsSubmitting(true);
+    // 1. Send registration payload to live AWS Backend API
+    try {
+      const pwd = regPassword || 'MatKhau@ChamDua2026';
+      await authApi.registerEmail(regEmail.trim(), pwd, pwd);
+    } catch (err) {
+      console.warn('Backend register call logged:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+
+    // 2. Create Restaurant with PENDING status
     const newRest = storageService.addRestaurant({
       name: regRestName.trim(),
       category: regCategory,
@@ -138,7 +215,7 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
       status: 'PENDING'
     });
 
-    // 2. Create User account for this restaurant manager
+    // 3. Create User account for this restaurant manager
     const newManager = storageService.createUser({
       name: regManagerName.trim(),
       email: regEmail.trim(),
@@ -176,6 +253,14 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 text-[10px] font-extrabold uppercase tracking-wider">
                   B2B Portal
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-tight flex items-center gap-1 border ${
+                  backendStatus?.isHealthy
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${backendStatus?.isHealthy ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                  AWS ALB {backendStatus?.latencyMs ? `(${backendStatus.latencyMs}ms)` : ''}
                 </span>
               </div>
               <p className="text-xs text-amber-300 font-semibold">Cổng Quản Trị Hệ Thống & Đối Tác Nhà Hàng</p>
@@ -318,10 +403,20 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
 
                 <button
                   type="submit"
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold text-sm shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 mt-2"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 disabled:opacity-70 text-white font-bold text-sm shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 mt-2"
                 >
-                  <LogIn className="w-4 h-4" />
-                  <span>Đăng Nhập Cổng Quản Trị / Đối Tác</span>
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Đang xác thực với AWS ALB...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-4 h-4" />
+                      <span>Đăng Nhập Cổng Quản Trị / Đối Tác</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}
@@ -446,11 +541,21 @@ export const AuthSplitView: React.FC<AuthSplitViewProps> = ({ onLoginSuccess }) 
 
                 <button
                   type="submit"
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 disabled:opacity-70 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95"
                 >
-                  <Store className="w-4 h-4" />
-                  <span>Đăng Ký Đối Tác & Vào Trang Quản Trị Quán</span>
-                  <ArrowRight className="w-4 h-4" />
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Đang đồng bộ hồ sơ lên AWS ALB...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Store className="w-4 h-4" />
+                      <span>Đăng Ký Đối Tác & Vào Trang Quản Trị Quán</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </form>
             )}

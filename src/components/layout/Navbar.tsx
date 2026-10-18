@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Store,
   Bell,
@@ -14,10 +14,13 @@ import {
   ShieldCheck,
   Utensils,
   ShieldAlert,
-  DollarSign
+  DollarSign,
+  Server
 } from 'lucide-react';
 import { User, AppNotification } from '../../types';
 import { storageService } from '../../services/storageService';
+import { apiClient } from '../../services/api/client';
+import { BackendStatusModal } from '../common/BackendStatusModal';
 
 export type AdminTab =
   | 'admin_overview'
@@ -51,6 +54,27 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showBackendModal, setShowBackendModal] = useState(false);
+  const [backendLatency, setBackendLatency] = useState<number | null>(null);
+  const [isBackendHealthy, setIsBackendHealthy] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiClient.checkHealth().then((health) => {
+      if (isMounted) {
+        if (health) {
+          setIsBackendHealthy(true);
+          setBackendLatency(health.latencyMs);
+        } else {
+          setIsBackendHealthy(false);
+        }
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const allUsers = storageService.getUsers();
   const allRestaurants = storageService.getRestaurants();
 
@@ -384,6 +408,35 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
+            {/* Live AWS Backend Status Pill */}
+            <button
+              onClick={() => setShowBackendModal(true)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-xs ${
+                isBackendHealthy
+                  ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800'
+                  : isBackendHealthy === false
+                  ? 'border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-800'
+                  : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+              }`}
+              title="Xem trạng thái kết nối AWS Backend Swagger"
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isBackendHealthy
+                    ? 'bg-emerald-500 animate-pulse'
+                    : isBackendHealthy === false
+                    ? 'bg-rose-500'
+                    : 'bg-amber-400 animate-ping'
+                }`}
+              />
+              <span className="font-mono text-[11px]">AWS ALB</span>
+              {backendLatency !== null && (
+                <span className="text-[10px] opacity-75 font-mono hidden sm:inline">
+                  {backendLatency}ms
+                </span>
+              )}
+            </button>
+
             {/* Reset Data Button */}
             <button
               onClick={handleResetData}
@@ -525,6 +578,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </>
         )}
       </div>
+
+      {/* Backend API Tester & Status Modal */}
+      <BackendStatusModal isOpen={showBackendModal} onClose={() => setShowBackendModal(false)} />
     </header>
   );
 };

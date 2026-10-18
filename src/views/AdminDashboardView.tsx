@@ -43,11 +43,13 @@ import {
   PieChart,
   BarChart2,
   LayoutGrid,
-  List
+  List,
+  Server
 } from 'lucide-react';
 import { Restaurant, User, GroupVoucher, DiningSession, DiningReport, PlatformCampaign, FinancialPayout } from '../types';
 import { storageService } from '../services/storageService';
 import { formatCurrency } from '../utils/geo';
+import { roomsApi } from '../services/api/roomsApi';
 
 interface AdminDashboardViewProps {
   currentUser: User;
@@ -102,6 +104,58 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   // Sessions filter
   const [sessionStatusFilter, setSessionStatusFilter] = useState<string>('ALL');
   const [sessionSearchQuery, setSessionSearchQuery] = useState('');
+  const [isLoadingAwsRooms, setIsLoadingAwsRooms] = useState(false);
+  const [awsSyncMessage, setAwsSyncMessage] = useState<string | null>(null);
+
+  const handleSyncAwsRooms = async () => {
+    setIsLoadingAwsRooms(true);
+    setAwsSyncMessage(null);
+    try {
+      const res = await roomsApi.getRooms();
+      if (res.ok && res.data && res.data.length > 0) {
+        const mappedSessions: DiningSession[] = res.data.map((r, idx) => ({
+          id: `aws_room_${r.roomId || idx + 1}`,
+          title: r.title || 'Bàn Ghép Trực Tiếp AWS',
+          restaurantId: `rest_${r.restaurantId || '1'}`,
+          restaurantName: r.restaurantName || r.title || 'Quán Đối Tác AWS',
+          restaurantAddress: r.restaurantAddress || 'Quận 1, TP. Hồ Chí Minh',
+          restaurantImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
+          isRestaurantRegistered: true,
+          hostId: `user_${r.hostUserId || 'admin'}`,
+          hostName: r.hostName || 'Chủ Bàn AWS',
+          hostAvatar: r.hostAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          targetSlots: r.maxMembers || 4,
+          joinedMembers: [
+            {
+              userId: `user_${r.hostUserId || 'admin'}`,
+              name: r.hostName || 'Chủ Bàn AWS',
+              avatar: r.hostAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+              isHost: true,
+              readyToLock: true,
+              introduction: 'Khởi tạo từ AWS ALB Backend'
+            }
+          ],
+          invitedFriends: [],
+          eatingTime: r.scheduledTime || 'Hôm nay, 19:30',
+          note: r.description || 'Được đồng bộ thời gian thực từ AWS Backend ALB API',
+          status: (r.status === 'COMPLETED' ? 'COMPLETED' : r.status === 'LOCKED' ? 'LOCKED' : 'RECRUITING') as any,
+          discussionMessages: [],
+          reservationStatus: 'SENT_TO_RESTAURANT',
+          createdAt: r.createdAt || new Date().toISOString()
+        }));
+
+        setSessions(prev => [...mappedSessions, ...prev.filter(s => !s.id.startsWith('aws_room_'))]);
+        setAwsSyncMessage(`Đã đồng bộ thành công ${res.data.length} bàn ghép từ AWS Backend ALB!`);
+      } else {
+        setAwsSyncMessage(`Đã kết nối AWS Backend ALB (${res.error?.status || 200}). Hiện tại chưa có bàn ghép mới hoặc API yêu cầu Bearer Token.`);
+      }
+    } catch (err: any) {
+      setAwsSyncMessage('Lỗi khi gọi API AWS Rooms: ' + (err?.message || 'Network error'));
+    } finally {
+      setIsLoadingAwsRooms(false);
+      setTimeout(() => setAwsSyncMessage(null), 5000);
+    }
+  };
 
   // User search & filter
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -1790,8 +1844,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <span className="hidden sm:inline">List</span>
                 </button>
               </div>
+
+              {/* AWS Live Rooms Sync Button */}
+              <button
+                onClick={handleSyncAwsRooms}
+                disabled={isLoadingAwsRooms}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs flex-shrink-0"
+                title="Gọi API GET /api/rooms từ AWS Backend Swagger"
+              >
+                <Server className={`w-3.5 h-3.5 ${isLoadingAwsRooms ? 'animate-spin text-amber-400' : 'text-emerald-400'}`} />
+                <span>{isLoadingAwsRooms ? 'Đang gọi AWS...' : 'Đồng bộ AWS Rooms'}</span>
+              </button>
             </div>
           </div>
+
+          {/* AWS Sync Notification */}
+          {awsSyncMessage && (
+            <div className="p-3.5 rounded-2xl bg-slate-900 text-white text-xs border border-slate-800 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                <span className="font-medium">{awsSyncMessage}</span>
+              </div>
+              <button
+                onClick={() => setAwsSyncMessage(null)}
+                className="text-slate-400 hover:text-white text-xs font-bold px-2 py-0.5 rounded-lg bg-slate-800"
+              >
+                Đóng
+              </button>
+            </div>
+          )}
 
           {/* SESSIONS VIEW: LIST TABLE OR CARD GRID */}
           {viewMode === 'list' ? (
